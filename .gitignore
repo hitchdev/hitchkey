@@ -1,0 +1,10 @@
+setup.cfg
+*.kate-swp
+*.pyc
+setup.cfg
+build/
+dist/
+tests/.hitch
+tests/boxcache
+state/
+hitchvm.egg-info/

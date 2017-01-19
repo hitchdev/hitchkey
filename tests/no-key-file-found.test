@@ -1,0 +1,12 @@
+- name: Error when no key file found
+  scenario:
+    - Run:
+       cmd: sudo apt-get install python-setuptools python-pip python3 -y
+       timeout: 120
+    - Run:
+       cmd: sudo apt-get install python-virtualenv -y
+       timeout: 120
+    - Run: cd /hitchkey ; sudo pip install .
+    - Run:
+       cmd: h command
+       expect: key.py not found in the following directories

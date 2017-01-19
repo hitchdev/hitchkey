@@ -1,0 +1,9 @@
+- name: Run flake8
+  tags:
+    - flake8
+  scenario:
+    - Flake8:
+        directory: hitchkey
+        args:
+          - --max-line-length=100
+          - --exclude=__init__.py

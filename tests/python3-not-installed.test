@@ -1,0 +1,11 @@
+- name: If python3 is not installed, require it
+  scenario:
+    - Run:
+       cmd: sudo apt-get install python-setuptools python-pip python-virtualenv -y
+       timeout: 120
+    # Uninstalling the python3 package does not appear to remove python3, this is a hack.
+    - Run: sudo rm /usr/bin/python3
+    - Run: cd /hitchkey ; sudo pip install .
+    - Run:
+       cmd: cd /hitchkey/tests/simple ; h command
+       expect: you must have python 3 installed

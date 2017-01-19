@@ -1,0 +1,13 @@
+- name: Install and run command
+  scenario:
+    - Run:
+       cmd: sudo apt-get install python-setuptools python-pip python3 -y
+       timeout: 120
+    - Run:
+       cmd: sudo apt-get install python-virtualenv -y
+       timeout: 120
+    - Run: cd /hitchkey ; sudo pip install .
+    - Run:
+       cmd: cd /hitchkey/tests/projecthitch/projectdir ; h cat file.txt
+       expect: project file contents
+       timeout: 120
