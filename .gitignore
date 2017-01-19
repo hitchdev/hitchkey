@@ -7,4 +7,4 @@ dist/
 tests/.hitch
 tests/boxcache
 state/
-hitchvm.egg-info/
+hitchkey.egg-info/

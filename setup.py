@@ -32,14 +32,13 @@ def read(*parts):
 
 
 setup(name="hitchkey",
-    version="0.1",
+    version=read('VERSION').replace('\n', ''),
     description="HitchKey bootstrapper - set up a development environment.",
     long_description=read('README.rst'),
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)',
-        'Topic :: Software Development :: Quality Assurance',
         'Topic :: Software Development :: Testing',
         'Topic :: Software Development :: Libraries',
         'Operating System :: Unix',
