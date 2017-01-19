@@ -1,4 +1,4 @@
-HitchVM
-=======
+HitchKey
+========
 
-Plugin that creates and sets up virtual machines to spec.
+Bootstrapper that sets up a development environment for a project.
