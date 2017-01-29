@@ -1,0 +1,25 @@
+argcomplete==1.7.0        # via hitchrun
+click==6.7                # via hitchrun, pip-tools
+colorama==0.3.7           # via hitchstory
+commandlib==0.2.5         # via hitchrun, hitchvm
+first==2.0.1              # via pip-tools
+hitchrun==0.1.5
+hitchstory==0.1.2
+hitchvm==0.2.0
+jinja2==2.9.4             # via hitchstory, hitchvm
+markupsafe==0.23          # via jinja2
+path.py==10.0             # via hitchrun, hitchstory, hitchvm, pathquery
+pathquery==0.2.0          # via hitchstory
+pexpect==4.2.1
+pip-tools==1.8.0          # via hitchrun
+ptyprocess==0.5.1         # via pexpect
+python-dateutil==2.6.0    # via strictyaml
+python-slugify==1.2.1     # via hitchstory
+ruamel.yaml==0.13.9       # via strictyaml
+six==1.10.0               # via pip-tools, python-dateutil
+strictyaml==0.4.1         # via hitchstory
+unidecode==0.4.20         # via python-slugify
+pkg-resources==0.0.0
+
+# The following packages are considered to be unsafe in a requirements file:
+# pip                       # via hitchrun
