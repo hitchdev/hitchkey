@@ -3,6 +3,7 @@ from hitchrun import Path, hitch_maintenance
 from hitchvm import StandardBox, Vagrant
 from pathquery import pathq
 from strictyaml import Int
+from commandlib import python
 import sys
 from pexpect import EOF
 
@@ -52,7 +53,6 @@ class Engine(BaseEngine):
         else:
             self.process.logfile = sys.stdout
 
-
         if expect is not None:
             self.process.expect(expect, timeout=timeout)
         self.process.expect(EOF, timeout=timeout)
@@ -93,7 +93,17 @@ def lint():
     """
     Lint all code.
     """
-    print("placeholder")
+    python("-m", "flake8")(
+        KEYPATH.parent.joinpath("hitchkey"),
+        "--max-line-length=100",
+        "--exclude=__init__.py",
+    ).run()
+    python("-m", "flake8")(
+        KEYPATH.joinpath("key.py"),
+        "--max-line-length=100",
+        "--exclude=__init__.py",
+    ).run()
+    print("Lint success!")
 
 
 def clean():
