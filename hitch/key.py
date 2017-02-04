@@ -116,12 +116,16 @@ def deploy(version):
     """
     Deploy to pypi as specified version.
     """
-    KEYPATH.parent.joinpath("VERSION").write_text(version)
-    git("add", "VERSION").run()
-    git("commit", "-m", "RELEASE: Bumped version").run()
-    git("push").run()
-    git("tag", "-a", version, "-m", "Version {0}".format(version)).run()
-    git("push", "origin", version).run()
+    version_file = KEYPATH.parent.joinpath("VERSION")
+    if version_file.bytes().decode("utf8") != version:
+        KEYPATH.parent.joinpath("VERSION").write_text(version)
+        git("add", "VERSION").run()
+        git("commit", "-m", "RELEASE: Bumped version").run()
+        git("push").run()
+        git("tag", "-a", version, "-m", "Version {0}".format(version)).run()
+        git("push", "origin", version).run()
+    else:
+        git("push").run()
     python("setup.py", "sdist", "upload").in_dir(KEYPATH.parent).run()
 
 
