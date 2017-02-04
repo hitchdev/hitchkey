@@ -1,6 +1,7 @@
 from hitchstory import StoryCollection, BaseEngine, validate
 from hitchrun import Path, hitch_maintenance
 from hitchvm import StandardBox, Vagrant
+from commandlib import Command
 from pathquery import pathq
 from strictyaml import Int
 from commandlib import python
@@ -9,6 +10,7 @@ from pexpect import EOF
 
 
 KEYPATH = Path(__file__).abspath().dirname()
+git = Command("git").in_dir(KEYPATH.parent)
 
 
 class Paths(object):
@@ -108,6 +110,19 @@ def lint():
         "--exclude=__init__.py",
     ).run()
     print("Lint success!")
+
+
+def deploy(version):
+    """
+    Deploy to pypi as specified version.
+    """
+    KEYPATH.joinpath("VERSION").write_text(version)
+    git("add", "VERSION").run()
+    git("commit", "-m", "RELEASE: Bumped version").run()
+    git("push").run()
+    git("tag", "-a", version, "-m", "Version {0}".format(version)).run()
+    git("push", "origin", version).run()
+    python("setup.py", "sdist", "upload").in_dir(KEYPATH.parent).run()
 
 
 def clean():
