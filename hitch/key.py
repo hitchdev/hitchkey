@@ -39,6 +39,7 @@ class Engine(BaseEngine):
 
         self.vm.restore_snapshot("ubuntu-1604-ready")
         self.vm.sync()
+
         self.run("cd /hitchkey ; sudo pip install .")
 
     def long_run(self, cmd):
@@ -57,6 +58,9 @@ class Engine(BaseEngine):
             self.process.expect(expect, timeout=timeout)
         self.process.expect(EOF, timeout=timeout)
         self.process.close()
+
+    def file_exists(self, path):
+        self.run("ls {0}".format(path))
 
     def tear_down(self):
         """Clean out the state directory."""

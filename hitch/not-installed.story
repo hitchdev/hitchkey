@@ -3,7 +3,7 @@ Python 3 not installed:
     - Run: sudo rm /usr/bin/python3
     - Run: cd /hitchkey ; sudo pip install .
     - Run:
-       cmd: cd /hitchkey/tests/simple ; h command
+       cmd: cd /hitchkey/hitch/example/simple ; h command
        expect: you must have python 3 installed
 
 Virtualenv not installed:
@@ -11,5 +11,5 @@ Virtualenv not installed:
   scenario:
     - Run: sudo rm /usr/bin/virtualenv
     - Run:
-       cmd: cd /hitchkey/tests/simple ; h command
+       cmd: cd /hitchkey/hitch/example/simple ; h command
        expect: You must have virtualenv

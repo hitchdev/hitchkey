@@ -4,7 +4,6 @@ setup.cfg
 setup.cfg
 build/
 dist/
-tests/.hitch
-tests/boxcache
+hitch/examples
 state/
 hitchkey.egg-info/

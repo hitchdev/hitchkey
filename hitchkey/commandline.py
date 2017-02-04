@@ -1,5 +1,5 @@
 """High level command line interface to hitch."""
-from hitchkey.utils import check_call, check_python_and_virtualenv
+from hitchkey import utils
 from os import path, makedirs
 import random
 import string
@@ -40,31 +40,29 @@ def run():
         sys.exit(1)
 
     keypy_directory = os.path.dirname(keypy_filename)
-    hitchdir_location_file = path.join(keypy_directory, "hitchdir")
 
-    check_python_and_virtualenv(None, None)
+    config = utils.read_config(os.path.join(keypy_directory, "mycomputer.ini"))
 
-    if path.exists(hitchdir_location_file):
-        with open(hitchdir_location_file, "r") as handle:
-            hitchdir = handle.read()
-    else:
-        hitchdir = new_hitch_dir()
-        with open(hitchdir_location_file, 'w') as handle:
-            handle.write(hitchdir)
+    python3, virtualenv = utils.check_python_and_virtualenv(
+        config.get("python3"),
+        config.get("virtualenv")
+    )
 
-    if not path.exists(hitchdir):
-        makedirs(hitchdir)
-        check_call([
-            "virtualenv",
-            path.join(hitchdir, "hvenv"),
+    genpath = utils.fail_if_spaces_in_path(config.get("genpath", new_hitch_dir()))
+
+    if not path.exists(genpath):
+        makedirs(genpath)
+        utils.check_call([
+            virtualenv,
+            path.join(genpath, "hvenv"),
             "--no-site-packages",
-            "-p", "python3"
+            "-p", python3
         ])
-        check_call([path.join(hitchdir, "hvenv", "bin", "pip"), "install", "hitchrun"])
-        with open(path.join(hitchdir, "hvenv", "linkfile"), "w") as handle:
-            handle.write(path.abspath(keypy_directory))
+        with open(path.join(genpath, "hvenv", "linkfile"), 'w') as handle:
+            handle.write(keypy_directory)
+        utils.check_call([path.join(genpath, "hvenv", "bin", "pip"), "install", "hitchrun"])
 
-    hitchrun = path.abspath(path.join(hitchdir, "hvenv", "bin", "hitchrun"))
+    hitchrun = path.abspath(path.join(genpath, "hvenv", "bin", "hitchrun"))
     os.execvp(hitchrun, [hitchrun] + sys.argv[1:])
 
 

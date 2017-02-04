@@ -23,10 +23,12 @@ Suggestions:
 
 #2 Install via pip, e.g.:
   - sudo pip3 install --upgrade virtualenv
+
+#3 Add its location to 'mycomputer.ini'
 """
 
 YOU_MUST_HAVE_PYTHON3_INSTALLED = """\
-To use Hitch, you must have python 3 installed.
+To use HitchKey, you must have python 3 installed.
 
 To install:
   - On Ubuntu/Debian : sudo apt-get install python3
@@ -121,7 +123,7 @@ hitchreqs.txt\n"""
 
 
 SPACES_NOT_ALLOWED = """\
-Spaces not allowed anywhere in the path:
+Spaces not allowed anywhere in the genpath:
 
 {0}
 """

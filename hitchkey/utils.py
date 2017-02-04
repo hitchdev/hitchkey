@@ -70,8 +70,27 @@ def check_python_and_virtualenv(python, virtualenv):
     return python3, virtualenv
 
 
-def fail_if_spaces_in_pwd():
-    """Raise error if spaces are found in the currend working dir."""
-    if " " in getcwd():
+def fail_if_spaces_in_path(filepath):
+    """Raise error if spaces are found in a path."""
+    if " " in filepath:
         stderr.write(languagestrings.SPACES_NOT_ALLOWED.format(getcwd()))
         exit(1)
+    return filepath
+
+
+def read_config(filename):
+    """
+    Read a standard ini file without section headers.
+    """
+    properties = {}
+    if path.exists(filename):
+        with open(filename, 'r') as handle:
+            for line in "".join(handle.readlines()).split("\n"):
+                if line != "" and not line.startswith(";"):
+                    if line.count("=") != 1:
+                        stderr.write("Error reading {0}\n".format(filename))
+                        stderr.write("Line '{0}' does not follow key=val\n".format(line))
+                        exit(1)
+                    key, value = line.split("=")
+                    properties[key] = value
+    return properties
