@@ -116,7 +116,7 @@ def deploy(version):
     """
     Deploy to pypi as specified version.
     """
-    KEYPATH.joinpath("VERSION").write_text(version)
+    KEYPATH.parent.joinpath("VERSION").write_text(version)
     git("add", "VERSION").run()
     git("commit", "-m", "RELEASE: Bumped version").run()
     git("push").run()
