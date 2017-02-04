@@ -90,7 +90,7 @@ def ci():
 
 def hitch(*args):
     """
-    Hitch maintenance commands.
+    Use 'h hitch --help' to get help on these commands.
     """
     hitch_maintenance(*args)
 
