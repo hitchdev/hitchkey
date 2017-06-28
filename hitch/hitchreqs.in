@@ -3,3 +3,4 @@ hitchrun
 hitchvm
 pexpect
 flake8
+twine
