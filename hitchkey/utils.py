@@ -41,7 +41,8 @@ def check_python_and_virtualenv(python, virtualenv):
         if path.exists(python):
             python3 = python
         else:
-            stderr.write("{0} not found.\n".format(python))
+            stderr.write("{0} not found.\n\n".format(python))
+            stderr.write(languagestrings.YOU_MUST_HAVE_PYTHON3_INSTALLED)
             exit(1)
 
     python_version = check_output([python3, "-V"], stderr=STDOUT).decode('utf8')

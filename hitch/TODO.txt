@@ -1,5 +1,5 @@
-Install using mycomputer.cfg
+Install using mycomputer.yml -- python: /usr/bin/python, virtualenv: /usr/bin/virtualenv
 Rebuild when hvenv not found.
 Add tests that test tests in folders with spaces in them.
 Fix python 3 error with LC_ALL / LC_LANG / etc.
-Use different pypi
+Use different pypi -- pypi: 

@@ -22,10 +22,8 @@ Suggestions:
   - On Mac OS X      : pip install --upgrade virtualenv
 
 #2 Install via pip, e.g.:
-  - sudo pip3 install --upgrade virtualenv
+  - sudo pip3 install --upgrade virtualenv"""
 
-#3 Add its location to 'mycomputer.ini'
-"""
 
 YOU_MUST_HAVE_PYTHON3_INSTALLED = """\
 To use HitchKey, you must have python 3 installed.

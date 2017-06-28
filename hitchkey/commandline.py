@@ -22,6 +22,12 @@ def run():
     checkdirectory = os.getcwd()
     directories_checked = []
     keypy_filename = None
+
+    python3, virtualenv = utils.check_python_and_virtualenv(
+        None,
+        None,
+    )
+
     while not os.path.ismount(checkdirectory):
         directories_checked.append(checkdirectory)
         if os.path.exists("{0}{1}key.py".format(checkdirectory, os.sep)):
@@ -41,14 +47,12 @@ def run():
 
     keypy_directory = os.path.dirname(keypy_filename)
 
-    config = utils.read_config(os.path.join(keypy_directory, "mycomputer.ini"))
+    gensymlink = os.path.abspath("gen")
 
-    python3, virtualenv = utils.check_python_and_virtualenv(
-        config.get("python3"),
-        config.get("virtualenv")
-    )
-
-    genpath = utils.fail_if_spaces_in_path(config.get("genpath", new_hitch_dir()))
+    if os.path.exists(gensymlink):
+        genpath = os.path.realpath(gensymlink)
+    else:
+        genpath = new_hitch_dir()
 
     if not path.exists(genpath):
         makedirs(genpath)
@@ -61,6 +65,7 @@ def run():
         with open(path.join(genpath, "hvenv", "linkfile"), 'w') as handle:
             handle.write(keypy_directory)
         utils.check_call([path.join(genpath, "hvenv", "bin", "pip"), "install", "hitchrun"])
+        os.symlink(genpath, path.join(keypy_directory, "gen"))
 
     hitchrun = path.abspath(path.join(genpath, "hvenv", "bin", "hitchrun"))
     os.execvp(hitchrun, [hitchrun] + sys.argv[1:])

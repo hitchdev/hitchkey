@@ -1,5 +1,6 @@
-from hitchstory import StoryCollection, BaseEngine, validate
-from hitchrun import Path, hitch_maintenance
+from hitchstory import StoryCollection, StorySchema, BaseEngine, validate, exceptions
+from strictyaml import MapPattern, Map, Str
+from hitchrun import hitch_maintenance, expected, DIR
 from hitchvm import StandardBox, Vagrant
 from commandlib import Command
 from pathquery import pathq
@@ -7,39 +8,56 @@ from strictyaml import Int
 from commandlib import python
 import sys
 from pexpect import EOF
-
-
-KEYPATH = Path(__file__).abspath().dirname()
-git = Command("git").in_dir(KEYPATH.parent)
-
-
-class Paths(object):
-    def __init__(self, keypath):
-        self.keypath = keypath
-        self.project = keypath.parent
-        self.state = keypath.parent.joinpath("state")
+from path import Path
 
 
 class Engine(BaseEngine):
-    def __init__(self, keypath):
-        self.path = Paths(keypath)
+    """Engine for running tests and inspecting result."""
+    schema = StorySchema(
+        preconditions=Map({
+            "files": MapPattern(Str(), Str()),
+        }),
+        about={
+            "description": Str(),
+        },
+    )
+
+    def __init__(self, paths):
+        self.path = paths
 
     def set_up(self):
+        self.path.state = self.path.gen.joinpath("state")
+
+        self.path.state.rmtree(ignore_errors=True)
+        self.path.state.mkdir()
+
+        for filename, text in self.preconditions.get("files", {}).items():
+            filepath = self.path.key.joinpath("examples").joinpath(filename)
+            if not filepath.dirname().exists():
+                filepath.dirname().makedirs()
+            filepath.write_text(text)
+
         box = StandardBox(Path("~/.hitchpkg").expand(), "ubuntu-trusty-64")
-        self.vm = Vagrant("hitchkey", box, self.path.state)
+        self.vm = Vagrant("hitchkey", box, self.path.gen)
         self.vm = self.vm.synced_with(self.path.project, "/hitchkey/")
 
-        if not self.vm.snapshot_exists("ubuntu-1604-ready"):
-            self.vm.up()
-            self.long_run("sudo apt-get install python-setuptools -y")
-            self.long_run("sudo apt-get install build-essential -y")
-            self.long_run("sudo apt-get install python-pip -y")
-            self.long_run("sudo apt-get install python-virtualenv -y")
-            self.long_run("sudo apt-get install python3 -y")
-            self.vm.take_snapshot("ubuntu-1604-ready")
+        if not self.vm.snapshot_exists("ubuntu-1604-installed"):
+            if not self.vm.snapshot_exists("ubuntu-1604-ready"):
+                self.vm.up()
+                self.long_run("sudo apt-get install python-setuptools -y")
+                self.long_run("sudo apt-get install build-essential -y")
+                self.long_run("sudo apt-get install python-pip -y")
+                self.long_run("sudo apt-get install python-virtualenv -y")
+                self.long_run("sudo apt-get install python3 -y")
+                self.run("virtualenv --python python3 ~/hvenv")
+                self.vm.take_snapshot("ubuntu-1604-ready")
+                self.vm.halt()
+            self.vm.restore_snapshot("ubuntu-1604-ready")
+            self.vm.sync()
+            self.vm.take_snapshot("ubuntu-1604-installed")
             self.vm.halt()
 
-        self.vm.restore_snapshot("ubuntu-1604-ready")
+        self.vm.restore_snapshot("ubuntu-1604-installed")
         self.vm.sync()
 
         self.run("cd /hitchkey ; sudo pip install .")
@@ -70,14 +88,16 @@ class Engine(BaseEngine):
             self.vm.halt()
 
 
-STORY_COLLECTION = StoryCollection(pathq(KEYPATH).ext("story"), Engine(KEYPATH))
+def _story_collection():
+    return StoryCollection(pathq(DIR.key).ext("story"), Engine(DIR))
 
 
+@expected(exceptions.HitchStoryException)
 def test(*words):
     """
     Run test with words.
     """
-    print(STORY_COLLECTION.shortcut(*words).play().report())
+    print(_story_collection().shortcut(*words).play().report())
 
 
 def ci():
@@ -85,7 +105,7 @@ def ci():
     Run all stories.
     """
     lint()
-    print(STORY_COLLECTION.ordered_by_name().play().report())
+    print(_story_collection().ordered_by_name().play().report())
 
 
 def hitch(*args):
@@ -100,12 +120,12 @@ def lint():
     Lint all code.
     """
     python("-m", "flake8")(
-        KEYPATH.parent.joinpath("hitchkey"),
+        DIR.project.joinpath("hitchkey"),
         "--max-line-length=100",
         "--exclude=__init__.py",
     ).run()
     python("-m", "flake8")(
-        KEYPATH.joinpath("key.py"),
+        DIR.key.joinpath("key.py"),
         "--max-line-length=100",
         "--exclude=__init__.py",
     ).run()
@@ -116,17 +136,25 @@ def deploy(version):
     """
     Deploy to pypi as specified version.
     """
-    version_file = KEYPATH.parent.joinpath("VERSION")
-    if version_file.bytes().decode("utf8") != version:
-        KEYPATH.parent.joinpath("VERSION").write_text(version)
+    git = Command("git").in_dir(DIR.project)
+    version_file = DIR.project.joinpath("VERSION")
+    old_version = version_file.bytes().decode("utf8")
+    if old_version != version:
+        DIR.project.joinpath("VERSION").write_text(version)
         git("add", "VERSION").run()
-        git("commit", "-m", "RELEASE: Bumped version").run()
+        git("commit", "-m", "RELEASE: Version {0} -> {1}".format(
+            old_version,
+            version
+        )).run()
         git("push").run()
         git("tag", "-a", version, "-m", "Version {0}".format(version)).run()
         git("push", "origin", version).run()
     else:
         git("push").run()
-    python("setup.py", "sdist", "upload").in_dir(KEYPATH.parent).run()
+    python("setup.py", "sdist").in_dir(DIR.project).run()
+    python(
+        "-m", "twine", "upload", "dist/hitchkey-{0}.tar.gz".format(version)
+    ).in_dir(DIR.project).run()
 
 
 def clean():
