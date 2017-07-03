@@ -168,6 +168,5 @@ def deploy(version):
     ).in_dir(DIR.project).run()
 
 
-
 def clean():
     print("destroy all created vms")

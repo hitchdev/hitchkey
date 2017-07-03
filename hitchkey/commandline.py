@@ -1,6 +1,7 @@
 """High level command line interface to hitch."""
-from hitchkey import utils
+from os.path import join, ismount, exists, abspath, dirname, realpath
 from os import path, makedirs
+from hitchkey import utils
 import random
 import string
 import sys
@@ -8,6 +9,9 @@ import os
 
 
 def new_hitch_dir():
+    """
+    Create a new named hitchdir.
+    """
     return path.join(
         path.expanduser("~/.hitch"),
         ''.join([
@@ -28,48 +32,47 @@ def run():
         None,
     )
 
-    while not os.path.ismount(checkdirectory):
-        directories_checked.append(checkdirectory)
-        if os.path.exists("{0}{1}key.py".format(checkdirectory, os.sep)):
+    while not ismount(checkdirectory):
+        if exists("{0}{1}key.py".format(checkdirectory, os.sep)):
             keypy_filename = "{0}{1}key.py".format(checkdirectory, os.sep)
-            directories_checked.append(checkdirectory)
             break
-        elif os.path.exists(os.path.join(checkdirectory, "hitch", "key.py")):
-            keypy_filename = os.path.join(checkdirectory, "hitch", "key.py")
-            directories_checked.append(os.path.join(checkdirectory, "hitch"))
+        elif exists(join(checkdirectory, "hitch", "key.py")):
+            keypy_filename = join(checkdirectory, "hitch", "key.py")
             break
         else:
-            checkdirectory = os.path.abspath(os.path.join(checkdirectory, os.pardir))
+            directories_checked.append(join(checkdirectory, "hitch"))
+            directories_checked.append(checkdirectory)
+            checkdirectory = abspath(join(checkdirectory, os.pardir))
 
     if not keypy_filename:
         sys.stderr.write("key.py not found in the following directories:\n\n")
         sys.stderr.write('\n'.join(directories_checked))
-        sys.stderr.write("\n\nSee http://hitchkey.readthedocs.org/en/latest/quickstart.html\n")
+        sys.stderr.write("\n\nCreate a key.py file in a convenient project directory to begin.\n")
         sys.exit(1)
 
-    keypy_directory = os.path.dirname(keypy_filename)
+    keypy_directory = dirname(keypy_filename)
 
-    gensymlink = os.path.abspath(os.path.join(keypy_directory, "gen"))
+    gensymlink = abspath(join(keypy_directory, "gen"))
 
-    if os.path.exists(gensymlink):
-        genpath = os.path.realpath(gensymlink)
+    if exists(gensymlink):
+        genpath = realpath(gensymlink)
     else:
         genpath = new_hitch_dir()
 
-    if not path.exists(genpath):
+    if not exists(genpath):
         makedirs(genpath)
         utils.check_call([
             virtualenv,
-            path.join(genpath, "hvenv"),
+            join(genpath, "hvenv"),
             "--no-site-packages",
             "-p", python3
         ])
-        with open(path.join(genpath, "hvenv", "linkfile"), 'w') as handle:
+        with open(join(genpath, "hvenv", "linkfile"), 'w') as handle:
             handle.write(keypy_directory)
-        utils.check_call([path.join(genpath, "hvenv", "bin", "pip"), "install", "hitchrun"])
-        os.symlink(genpath, path.join(keypy_directory, "gen"))
+        utils.check_call([join(genpath, "hvenv", "bin", "pip"), "install", "hitchrun"])
+        os.symlink(genpath, join(keypy_directory, "gen"))
 
-    hitchrun = path.abspath(path.join(genpath, "hvenv", "bin", "hitchrun"))
+    hitchrun = abspath(join(genpath, "hvenv", "bin", "hitchrun"))
     os.execvp(hitchrun, [hitchrun] + sys.argv[1:])
 
 
