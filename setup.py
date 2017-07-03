@@ -59,7 +59,7 @@ setup(name="hitchkey",
     install_requires=[],
     packages=find_packages(exclude=["docs", ]),
     package_data={},
-    entry_points=dict(console_scripts=['h=hitchkey:commandline.run',]),
+    entry_points=dict(console_scripts=['hk=hitchkey:commandline.run',]),
     zip_safe=False,
     include_package_data=True,
 )

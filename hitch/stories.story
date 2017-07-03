@@ -24,15 +24,15 @@ Run hitchkey in related directories:
         project file contents
   scenario:
     - Run:
-       cmd: cd /hitchkey/hitch/examples/hitch_subdirectory/projectdir ; h cat file.txt
+       cmd: cd /hitchkey/hitch/examples/hitch_subdirectory/projectdir ; hk cat file.txt
        expect: project file contents
        timeout: 120
     - Run:
-       cmd: cd /hitchkey/hitch/examples/hitch_subdirectory/hitch ; h cat ../projectdir/file.txt
+       cmd: cd /hitchkey/hitch/examples/hitch_subdirectory/hitch ; hk cat ../projectdir/file.txt
        expect: project file contents
        timeout: 5
     - Run:
-       cmd: cd /hitchkey/hitch/examples/hitch_subdirectory/ ; h cat projectdir/file.txt
+       cmd: cd /hitchkey/hitch/examples/hitch_subdirectory/ ; hk cat projectdir/file.txt
        expect: project file contents
        timeout: 5
 
@@ -45,7 +45,7 @@ Python 3 not installed:
     - Run: sudo rm /usr/bin/python3
     - Run: cd /hitchkey ; sudo pip install .
     - Run:
-       cmd: cd /hitchkey/hitch/examples ; h command
+       cmd: cd /hitchkey/hitch/examples ; hk command
        expect: you must have python 3 installed
 
 Virtualenv not installed:
@@ -53,10 +53,9 @@ Virtualenv not installed:
     When virtualenv is not installed, a readable, actionable error should
     be thrown.
   scenario:
-    - Run: cd /hitchkey ; sudo pip install .
     - Run: sudo rm /usr/bin/virtualenv
     - Run:
-       cmd: cd /hitchkey/hitch/examples ; h command
+       cmd: cd /hitchkey/hitch/examples ; hk command
        expect: You must have virtualenv
 
 No key file found:
@@ -64,13 +63,13 @@ No key file found:
     When no key.py file is found, say so.
   scenario:
     - Run:
-       cmd: h command
+       cmd: hk command
        expect: key.py not found in the following directories
 
 
 #mycomputer.ini setup:
   #scenario:
     #- Run:
-       #cmd: cd /hitchkey/hitch/examples/mycomputer ; h command
+       #cmd: cd /hitchkey/hitch/examples/mycomputer ; hk command
        #expect: Command ran
     #- File exists: /home/vagrant/customgenpath/hvenv/bin/hitchrun
