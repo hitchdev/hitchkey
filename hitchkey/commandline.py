@@ -32,9 +32,11 @@ def run():
         directories_checked.append(checkdirectory)
         if os.path.exists("{0}{1}key.py".format(checkdirectory, os.sep)):
             keypy_filename = "{0}{1}key.py".format(checkdirectory, os.sep)
+            directories_checked.append(checkdirectory)
             break
-        elif os.path.exists("{0}{1}hitch{1}key.py".format(checkdirectory, os.sep)):
-            keypy_filename = "{0}{1}hitch{1}key.py".format(checkdirectory, os.sep)
+        elif os.path.exists(os.path.join(checkdirectory, "hitch", "key.py")):
+            keypy_filename = os.path.join(checkdirectory, "hitch", "key.py")
+            directories_checked.append(os.path.join(checkdirectory, "hitch"))
             break
         else:
             checkdirectory = os.path.abspath(os.path.join(checkdirectory, os.pardir))
@@ -47,7 +49,7 @@ def run():
 
     keypy_directory = os.path.dirname(keypy_filename)
 
-    gensymlink = os.path.abspath("gen")
+    gensymlink = os.path.abspath(os.path.join(keypy_directory, "gen"))
 
     if os.path.exists(gensymlink):
         genpath = os.path.realpath(gensymlink)

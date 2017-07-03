@@ -1,20 +1,4 @@
-Run a simple command in the same directory:
-  description: |
-    HitchKey will look for a key.py file to run in the current
-    directory first and then build an environment and run
-    the command.
-  preconditions:
-    files:
-      key.py: |
-        def command():
-            print("Command ran")
-  scenario:
-    - Run:
-       cmd: cd /hitchkey/hitch/examples/ ; h command
-       expect: Command ran
-
-
-Run simple hitch command in subdirectory:
+Run hitchkey in related directories:
   description: |
     HitchKey will look for a key.py file in:
     
@@ -43,6 +27,14 @@ Run simple hitch command in subdirectory:
        cmd: cd /hitchkey/hitch/examples/hitch_subdirectory/projectdir ; h cat file.txt
        expect: project file contents
        timeout: 120
+    - Run:
+       cmd: cd /hitchkey/hitch/examples/hitch_subdirectory/hitch ; h cat ../projectdir/file.txt
+       expect: project file contents
+       timeout: 5
+    - Run:
+       cmd: cd /hitchkey/hitch/examples/hitch_subdirectory/ ; h cat projectdir/file.txt
+       expect: project file contents
+       timeout: 5
 
 
 Python 3 not installed:
