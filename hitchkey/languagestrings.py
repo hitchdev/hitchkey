@@ -33,15 +33,6 @@ To install:
   - On Fedora        : sudo yum install python3
   - On Arch          : sudo pacman -Sy python3
   - On Mac OS X      : brew install python3
-
-If your python3 is *not* on the system path with the name 'python3',
-you can specify the location of its virtualenv executable like so:
-
-hitch init --virtualenv=/path/to/python3/bin/virtualenv
-
-Or specify the location of the python3 interpreter, e.g.
-
-hitch init --python=/path/to/python3/bin/python3
 """
 
 YOU_MUST_HAVE_VERSION_ABOVE_PYTHON33 = """\
@@ -52,46 +43,6 @@ testing environment cannot.
 Suggestions:
 
 #1 You may need to run a sytem upgrade or upgrade your OS.
-
-#2 If you have python 3.3+ installed but it is not accessible
-on the system path with the command 'python3', you can run:
-
-hitch init --virtualenv=/path/to/python3/bin/virtualenv
-
-OR
-
-hitch init --python=/path/to/python3/bin/python3
-"""
-
-
-HITCH_PROJECT_ALREADY_EXISTS_HERE = """\
-A hitch project has already been initialized in this directory
-(a hitchreqs.txt file was detected):
-
-* To initalize it run 'hitch init'.
-* To quickstart a new project run 'hitch quickstart' in an empty directory.
-"""
-
-NO_PROJECT_FOUND = """\
-No project found in this directory.
-
-Use 'hitch quickstart' to initialize or change to directory where the
-project is located and run 'hitch init' again.
-"""
-
-
-NO_HITCH_ENVIRONMENT_DETECTED = """\
-No hitch environment detected in this directory.
-"""
-
-
-ERROR_INITIALIZING_HITCH = """\
-\nError initializing hitch. Problem checklist:\n
-* Was there a problem with your internet?
-* Was there a python package being installed that couldn't compile?\n
-
-Try searching for any errors printed above or raising an issue at:
-http://github.com/hitchtest/hitch/issues/
 """
 
 
@@ -111,13 +62,8 @@ SOMETHING_CORRUPTED = """\
 WARNING: Hitch directory was corrupted. Run 'hitch clean' and hitch init again.
 Please, if you think this is a bug, raise an issue at:\n
 
-http://github.com/hitchtest/hitch/issues/
+http://github.com/hitchtest/hitchkey/issues/
 """
-
-
-UPDATING_REQUIREMENTS = """\
-Updating installed packages to bring them in alignment with the contents of
-hitchreqs.txt\n"""
 
 
 SPACES_NOT_ALLOWED = """\
