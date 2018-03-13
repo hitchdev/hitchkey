@@ -16,7 +16,7 @@ def new_hitch_dir():
         path.expanduser("~/.hitch"),
         ''.join([
             random.choice(
-                string.digits + string.lowercase
+                string.digits + string.ascii_lowercase
             ) for _ in range(6)
         ])
     )
