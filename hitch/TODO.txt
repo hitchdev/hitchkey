@@ -1,3 +1,6 @@
+- if a directory is already in gen/ then fail gracefully.
+- deal with being in a virtualenv gracefully.
+
 Install using mycomputer.yml -- python: /usr/bin/python, virtualenv: /usr/bin/virtualenv
 Fix corrupt installation.
 Add tests that test tests in folders with spaces in them.
