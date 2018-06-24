@@ -20,6 +20,7 @@ def check_call(command, shell=False):
     process = Popen(command, shell=shell)
     process.communicate()
     if process.returncode != 0:
+        stderr.write("Error running {}".format(' '.join(command)))
         raise CalledProcessError
     return
 

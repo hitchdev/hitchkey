@@ -2,6 +2,7 @@
 from os.path import join, ismount, exists, abspath, dirname, realpath
 from os import path, makedirs
 from hitchkey import utils
+from shutil import rmtree
 import random
 import string
 import sys
@@ -61,17 +62,22 @@ def run():
 
     if not exists(genpath):
         makedirs(genpath)
-        utils.check_call([
-            virtualenv,
-            join(genpath, "hvenv"),
-            "--no-site-packages",
-            "-p", python3
-        ])
-        with open(join(genpath, "hvenv", "linkfile"), 'w') as handle:
-            handle.write(keypy_directory)
-        utils.check_call([join(genpath, "hvenv", "bin", "pip"), "install", "hitchrun"])
-        os.symlink(genpath, join(keypy_directory, "gen"))
-
+        try:
+            utils.check_call([
+                virtualenv,
+                join(genpath, "hvenv"),
+                "--no-site-packages",
+                "-p", python3
+            ])
+            utils.check_call([
+                join(genpath, "hvenv", "bin", "pip"), "install", "hitchrun"
+            ])
+            with open(join(genpath, "hvenv", "linkfile"), 'w') as handle:
+                handle.write(keypy_directory)
+            os.symlink(genpath, join(keypy_directory, "gen"))
+        except utils.CalledProcessError:
+            rmtree(genpath, ignore_errors=True)
+            sys.exit(1)
     hitchrun = abspath(join(genpath, "hvenv", "bin", "hitchrun"))
     os.execvp(hitchrun, [hitchrun] + sys.argv[1:])
 
