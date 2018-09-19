@@ -79,7 +79,7 @@ def run():
             rmtree(genpath, ignore_errors=True)
             sys.exit(1)
     hitchrun = abspath(join(genpath, "hvenv", "bin", "hitchrun"))
-    os.execv(hitchrun, [hitchrun] + sys.argv[1:])
+    os.execve(hitchrun, [hitchrun] + sys.argv[1:], utils.execution_env())
 
 
 if __name__ == '__main__':

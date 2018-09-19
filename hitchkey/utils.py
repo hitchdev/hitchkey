@@ -2,7 +2,7 @@ from sys import stderr, exit
 from subprocess import call, PIPE, Popen, STDOUT
 from hitchkey import languagestrings
 from functools import reduce
-from os import path, getcwd
+from os import path, getcwd, environ
 
 
 class CalledProcessError(Exception):
@@ -10,14 +10,26 @@ class CalledProcessError(Exception):
     pass
 
 
+def execution_env():
+    """
+    Return environment variables which will make subprocesses function properly.
+
+    Avoids hashbang/wrong python env bug: https://github.com/pypa/virtualenv/issues/845
+    """
+    env = dict(environ)
+    if "__PYVENV_LAUNCHER" in env:
+        env.pop("__PYVENV_LAUNCHER")
+    return env
+
+
 def check_output(command, stdout=PIPE, stderr=PIPE):
     """Re-implemented subprocess.check_output since it is not available < python 2.7."""
-    return Popen(command, stdout=stdout, stderr=stderr).communicate()[0]
+    return Popen(command, stdout=stdout, stderr=stderr, env=execution_env()).communicate()[0]
 
 
 def check_call(command, shell=False):
     """Re-implemented subprocess.check_call since it is not available < python 2.7."""
-    process = Popen(command, shell=shell)
+    process = Popen(command, shell=shell, env=execution_env())
     process.communicate()
     if process.returncode != 0:
         stderr.write("Error running {}".format(' '.join(command)))

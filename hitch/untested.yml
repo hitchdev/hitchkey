@@ -1,0 +1,1 @@
+- Scenario where scripts installed with the wrong shebang (e.g. see https://github.com/pypa/virtualenv/issues/845).
