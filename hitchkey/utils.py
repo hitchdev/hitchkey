@@ -17,8 +17,8 @@ def execution_env():
     Avoids hashbang/wrong python env bug: https://github.com/pypa/virtualenv/issues/845
     """
     env = dict(environ)
-    if "__PYVENV_LAUNCHER" in env:
-        env.pop("__PYVENV_LAUNCHER")
+    if "__PYVENV_LAUNCHER__" in env:
+        env.pop("__PYVENV_LAUNCHER__")
     return env
 
 
