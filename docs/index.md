@@ -35,13 +35,16 @@ It was designed so that:
 
 ## Install
 
-You can install the dependencyless hitchkey bootstrapper by doing:
+You can install the dependencyless hitchkey bootstrapper by installing, in the system python environment:
 
 ```
 sudo pip install hitchkey
 ```
 
-If you are morally against the use of "sudo pip", I'd advise using "[pipsi](https://github.com/mitsuhiko/pipsi) install" instead.
+WARNING: Make sure you are not in an activated virtualenv when you do this (i.e. you haven't just run workon). It is a system command.
+
+If you are morally against the use of "sudo pip", I'd suggest using "[pipsi](https://github.com/mitsuhiko/pipsi) install hitchkey" instead.
+
 
 ## Using hitchkey when you already have a key.py
 
@@ -53,6 +56,7 @@ Run 'hk command' after that and it will run a command in key.py.
 ## Why?
 
 This project grew out of a bash script that I kept creating repeatedly called "dev.sh" that I used to run
-various development environment tasks. Over time I grew sophisticated tasks that needed python
+various development environment tasks. Over time it grew more sophisticated build and test tasks that
+needed python
 and eventually I also started needing a cornucopia of packages installed in a python virtualenv.
 
