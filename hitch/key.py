@@ -1,29 +1,29 @@
-from hitchstory import StoryCollection, StorySchema, BaseEngine, validate, exceptions
+from hitchstory import StoryCollection, BaseEngine, validate, exceptions, no_stacktrace_for
 from strictyaml import MapPattern, Map, Str
-from hitchrun import hitch_maintenance, expected, DIR
-from hitchvm import StandardBox, Vagrant
+from hitchrun import expected, DIR
+from hitchstory import GivenDefinition, GivenProperty, InfoDefinition, InfoProperty
+from icommandlib import ICommandError
 from commandlib import Command
-from pathquery import pathq
+from pathquery import pathquery
 from strictyaml import Int
 from commandlib import python
-import sys
-from pexpect import EOF
+from templex import Templex
+import hitchbuildvagrant
 from path import Path
+from hashlib import md5
+import sys
 
 
 class Engine(BaseEngine):
     """Engine for running tests and inspecting result."""
-    schema = StorySchema(
-        preconditions=Map({
-            "files": MapPattern(Str(), Str()),
-        }),
-        about={
-            "description": Str(),
-        },
+    given_definition = GivenDefinition(
+        files=GivenProperty(MapPattern(Str(), Str())),
+        setup=GivenProperty(Str()),
     )
 
-    def __init__(self, paths):
+    def __init__(self, paths, rewrite):
         self.path = paths
+        self._rewrite = rewrite
 
     def set_up(self):
         self.path.state = self.path.gen.joinpath("state")
@@ -31,88 +31,92 @@ class Engine(BaseEngine):
         self.path.state.rmtree(ignore_errors=True)
         self.path.state.mkdir()
 
-        for filename, text in self.preconditions.get("files", {}).items():
-            filepath = self.path.key.joinpath("examples").joinpath(filename)
+        self.path.example = self.path.project / "example"
+
+        if self.path.example.exists():
+            self.path.example.rmtree()
+        self.path.example.makedirs()
+
+        for filename, text in self.given.get("files", {}).items():
+            filepath = self.path.example.joinpath(filename)
             if not filepath.dirname().exists():
                 filepath.dirname().makedirs()
             filepath.write_text(text)
 
-        box = StandardBox(Path("~/.hitchpkg").expand(), "ubuntu-trusty-64")
-        self.vm = Vagrant("hitchkey", box, self.path.gen)
-        self.vm = self.vm.synced_with(self.path.project, "/hitchkey/")
+        ubuntu = hitchbuildvagrant.Box("hitchkey", "ubuntu-trusty-64")\
+                                  .with_download_path(self.path.share)\
+                                  .which_syncs(self.path.project, "/hitchkey")
 
-        if not self.vm.snapshot_exists("ubuntu-1604-installed"):
-            if not self.vm.snapshot_exists("ubuntu-1604-ready"):
-                self.vm.up()
-                self.long_run("sudo apt-get install python-setuptools -y")
-                self.long_run("sudo apt-get install build-essential -y")
-                self.long_run("sudo apt-get install python-pip -y")
-                self.long_run("sudo apt-get install python-virtualenv -y")
-                self.long_run("sudo apt-get install python3 -y")
-                self.run("virtualenv --python python3 ~/hvenv")
-                self.vm.take_snapshot("ubuntu-1604-ready")
-                self.vm.halt()
-            self.vm.restore_snapshot("ubuntu-1604-ready")
-            self.vm.sync()
-            self.vm.take_snapshot("ubuntu-1604-installed")
-            self.vm.halt()
+        setup_code = self.given.get("setup", "")
 
-        self.vm.restore_snapshot("ubuntu-1604-installed")
-        self.vm.sync()
+        class PythonSnapshot(hitchbuildvagrant.Snapshot):
+            def setup(self):
+                self.cmd(setup_code).run()
+                self.cmd("cd /hitchkey/ ; sudo pip install .").run()
 
-        self.run("cd /hitchkey ; sudo pip install .")
+        setuphash = md5(setup_code.encode('utf8')).hexdigest()
 
-    def long_run(self, cmd):
-        self.run(cmd, timeout=600)
+        self.snapshot = PythonSnapshot("hitchkey_{}".format(setuphash), ubuntu).with_build_path(self.path.gen)
+        self.snapshot.ensure_built()
 
-    @validate(timeout=Int())
-    def run(self, cmd=None, expect=None, timeout=240):
-        self.process = self.vm.cmd(cmd).pexpect()
+    @validate(timeout=Int(), exit_code=Int())
+    @no_stacktrace_for(ICommandError)
+    def run(self, cmd=None, will_output=None, timeout=240, exit_code=None):
+        process = self.snapshot.cmd(cmd.replace("\n", " ; ")).interact().run()
+        process.wait_for_finish(timeout=timeout)
 
-        if sys.stdout.isatty():
-            self.process.logfile = sys.stdout.buffer
-        else:
-            self.process.logfile = sys.stdout
+        actual_output = '\n'.join(process.stripshot().split("\n")[:-1])
 
-        if expect is not None:
-            self.process.expect(expect, timeout=timeout)
-        self.process.expect(EOF, timeout=timeout)
-        self.process.close()
+        if will_output is not None:
+            try:
+                Templex(will_output).assert_match(actual_output)
+            except AssertionError:
+                if self._rewrite:
+                    self.current_step.update(**{"will output": actual_output})
+                else:
+                    raise
+
+        if exit_code is not None:
+            assert process.exit_code == exit_code, "Exit code should be {} was {}".format(
+                exit_code,
+                process.exit_code
+            )
 
     def file_exists(self, path):
         self.run("ls {0}".format(path))
 
     def tear_down(self):
         """Clean out the state directory."""
-        if hasattr(self, 'vm'):
-            self.vm.halt()
+        if hasattr(self, 'snapshot'):
+            self.snapshot.shutdown()
 
 
-def _story_collection():
-    return StoryCollection(pathq(DIR.key).ext("story"), Engine(DIR))
+def _story_collection(rewrite=False):
+    return StoryCollection(pathquery(DIR.key).ext("story"), Engine(DIR, rewrite))
 
 
 @expected(exceptions.HitchStoryException)
-def test(*words):
+def bdd(*words):
     """
-    Run test with words.
+    Run story.
     """
-    print(_story_collection().shortcut(*words).play().report())
+    _story_collection().shortcut(*words).play()
 
 
-def ci():
+@expected(exceptions.HitchStoryException)
+def rbdd(*words):
+    """
+    Run story and rewrite.
+    """
+    _story_collection(rewrite=True).shortcut(*words).play()
+
+
+def regression():
     """
     Run all stories.
     """
     lint()
-    print(_story_collection().ordered_by_name().play().report())
-
-
-def hitch(*args):
-    """
-    Use 'h hitch --help' to get help on these commands.
-    """
-    hitch_maintenance(*args)
+    _story_collection().ordered_by_name().play()
 
 
 def lint():
