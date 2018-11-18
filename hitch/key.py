@@ -21,9 +21,10 @@ class Engine(BaseEngine):
         setup=GivenProperty(Str()),
     )
 
-    def __init__(self, paths, rewrite):
+    def __init__(self, paths, rewrite, debug):
         self.path = paths
         self._rewrite = rewrite
+        self._debug = debug
 
     def set_up(self):
         self.path.state = self.path.gen.joinpath("state")
@@ -52,17 +53,25 @@ class Engine(BaseEngine):
         class PythonSnapshot(hitchbuildvagrant.Snapshot):
             def setup(self):
                 self.cmd(setup_code).run()
+                self.cmd("sudo apt-get install python-setuptools -y").run()
+                self.cmd("sudo apt-get install build-essential -y").run()
+                self.cmd("sudo apt-get install python-pip -y").run()
+                self.cmd("sudo apt-get install python-virtualenv -y").run()
+                self.cmd("sudo apt-get install python3 -y").run()
                 self.cmd("cd /hitchkey/ ; sudo pip install .").run()
 
         setuphash = md5(setup_code.encode('utf8')).hexdigest()
 
         self.snapshot = PythonSnapshot("hitchkey_{}".format(setuphash), ubuntu).with_build_path(self.path.gen)
         self.snapshot.ensure_built()
+        self.snapshot.box.vagrant("rsync").run()
+        self.snapshot.cmd("cd /hitchkey/ ; sudo pip uninstall hitchkey -y ; sudo pip install .").run()
 
     @validate(timeout=Int(), exit_code=Int())
     @no_stacktrace_for(ICommandError)
-    def run(self, cmd=None, will_output=None, timeout=240, exit_code=None):
-        process = self.snapshot.cmd(cmd.replace("\n", " ; ")).interact().run()
+    @no_stacktrace_for(AssertionError)
+    def run(self, cmd=None, will_output=None, timeout=240, exit_code=0):
+        process = self.snapshot.cmd(cmd.replace("\n", " ; ")).interact().screensize(160, 100).run()
         process.wait_for_finish(timeout=timeout)
 
         actual_output = '\n'.join(process.stripshot().split("\n")[:-1])
@@ -76,14 +85,20 @@ class Engine(BaseEngine):
                 else:
                     raise
 
-        if exit_code is not None:
-            assert process.exit_code == exit_code, "Exit code should be {} was {}".format(
-                exit_code,
-                process.exit_code
-            )
+        assert process.exit_code == exit_code, "Exit code should be {} was {}, output:\n{}".format(
+            exit_code,
+            process.exit_code,
+            actual_output,
+        )
 
-    def file_exists(self, path):
-        self.run("ls {0}".format(path))
+    def pause(self):
+        import IPython
+        IPython.embed()
+
+    def on_failure(self, reason):
+        if self._debug:
+            import IPython
+            IPython.embed()
 
     def tear_down(self):
         """Clean out the state directory."""
@@ -91,8 +106,8 @@ class Engine(BaseEngine):
             self.snapshot.shutdown()
 
 
-def _story_collection(rewrite=False):
-    return StoryCollection(pathquery(DIR.key).ext("story"), Engine(DIR, rewrite))
+def _story_collection(rewrite=False, debug=False):
+    return StoryCollection(pathquery(DIR.key).ext("story"), Engine(DIR, rewrite, debug))
 
 
 @expected(exceptions.HitchStoryException)
@@ -109,6 +124,14 @@ def rbdd(*words):
     Run story and rewrite.
     """
     _story_collection(rewrite=True).shortcut(*words).play()
+
+
+@expected(exceptions.HitchStoryException)
+def dbdd(*words):
+    """
+    Run story and rewrite in debug mode.
+    """
+    _story_collection(debug=True).shortcut(*words).play()
 
 
 def regression():

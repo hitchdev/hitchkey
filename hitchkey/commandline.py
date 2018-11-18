@@ -27,11 +27,37 @@ def run():
     checkdirectory = os.getcwd()
     directories_checked = []
     keypy_filename = None
+    arguments = sys.argv[1:]
 
     python3, virtualenv = utils.check_python_and_virtualenv(
         None,
         None,
     )
+
+    if len(arguments) > 0:
+        if arguments[0] == "--quickstart":
+            try:
+                utils.ensure_share_directory_exists()
+                utils.ensure_quickstart_gone()
+                utils.check_call([
+                    virtualenv,
+                    utils.quickstart_path(),
+                    "--no-site-packages",
+                    "-p", python3
+                ])
+                pip = join(utils.quickstart_path(), "bin", "pip")
+                utils.check_call([
+                    pip, "install", "pip", "--upgrade",
+                ])
+                utils.check_call([
+                    pip, "install", "hitchqs"
+                ])
+                quickstart = abspath(join(utils.quickstart_path(), "bin", "quickstart"))
+                os.execve(quickstart, [quickstart] + arguments[1:], utils.execution_env())
+                return
+            except utils.CalledProcessError:
+                rmtree(utils.quickstart_path(), ignore_errors=True)
+                sys.exit(1)
 
     while not ismount(checkdirectory):
         if exists("{0}{1}key.py".format(checkdirectory, os.sep)):
@@ -54,6 +80,18 @@ def run():
     keypy_directory = dirname(keypy_filename)
 
     gensymlink = abspath(join(keypy_directory, "gen"))
+
+    if len(arguments) > 0:
+        if arguments[0] == "--clean":
+            if len(arguments) == 1:
+                if exists(gensymlink):
+                    rmtree(realpath(gensymlink))
+                    os.remove(gensymlink)
+                    rmtree(abspath(join(keypy_directory, "__pycache__")), ignore_errors=True)
+                    sys.exit(0)
+                else:
+                    print("No genfiles or pycache to clean for this project.")
+                    sys.exit(1)
 
     if exists(gensymlink):
         genpath = realpath(gensymlink)
@@ -79,7 +117,7 @@ def run():
             rmtree(genpath, ignore_errors=True)
             sys.exit(1)
     hitchrun = abspath(join(genpath, "hvenv", "bin", "hitchrun"))
-    os.execve(hitchrun, [hitchrun] + sys.argv[1:], utils.execution_env())
+    os.execve(hitchrun, [hitchrun] + arguments, utils.execution_env())
 
 
 if __name__ == '__main__':

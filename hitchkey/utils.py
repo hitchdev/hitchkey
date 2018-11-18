@@ -2,12 +2,46 @@ from sys import stderr, exit
 from subprocess import call, PIPE, Popen, STDOUT
 from hitchkey import languagestrings
 from functools import reduce
-from os import path, getcwd, environ
+from os import path, getcwd, environ, makedirs
+import shutil
 
 
 class CalledProcessError(Exception):
     """Re-implemented CalledProcessError, since it is not available < python 2.7."""
     pass
+
+
+def quickstart_path():
+    """
+    Get ~/.hitch/share/quickstart/
+    """
+    return path.join(path.expanduser("~"), ".hitch", "share", "quickstart")
+
+
+def ensure_share_directory_exists():
+    """
+    Ensure that:
+
+    ~/.hitch/ exists
+    ~/.hitch/share/ exists
+    """
+    hitch_path = path.join(path.expanduser("~"), ".hitch")
+
+    if not path.exists(hitch_path):
+        makedirs(hitch_path)
+
+    share_path = path.join(hitch_path, "share")
+
+    if not path.exists(share_path):
+        makedirs(share_path)
+
+
+def ensure_quickstart_gone():
+    """
+    Ensure that ~/.hitch/share/quickstart/ virtualenv is deleted.
+    """
+    if path.exists(quickstart_path()):
+        shutil.rmtree(quickstart_path())
 
 
 def execution_env():

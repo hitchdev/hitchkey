@@ -1,4 +1,4 @@
-Run hitchkey in related directories:
+Run hitchkey command:
   based on: prerequisites
   about: |
     HitchKey will look for a key.py file in:
