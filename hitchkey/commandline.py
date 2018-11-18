@@ -38,19 +38,19 @@ def run():
         if arguments[0] == "--quickstart":
             try:
                 utils.ensure_share_directory_exists()
-                utils.ensure_quickstart_gone()
-                utils.check_call([
-                    virtualenv,
-                    utils.quickstart_path(),
-                    "--no-site-packages",
-                    "-p", python3
-                ])
+                if not exists(utils.quickstart_path()):
+                    utils.check_call([
+                        virtualenv,
+                        utils.quickstart_path(),
+                        "--no-site-packages",
+                        "-p", python3
+                    ])
                 pip = join(utils.quickstart_path(), "bin", "pip")
                 utils.check_call([
                     pip, "install", "pip", "--upgrade",
                 ])
                 utils.check_call([
-                    pip, "install", "hitchqs"
+                    pip, "install", "hitchqs", "--upgrade",
                 ])
                 quickstart = abspath(join(utils.quickstart_path(), "bin", "quickstart"))
                 os.execve(quickstart, [quickstart] + arguments[1:], utils.execution_env())
