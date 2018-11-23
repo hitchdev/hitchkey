@@ -35,7 +35,7 @@ def run():
     )
 
     if len(arguments) > 0:
-        if arguments[0] == "--quickstart":
+        if arguments[0] == "--tutorial" or arguments[0] == "--skeleton":
             try:
                 utils.ensure_share_directory_exists()
                 if not exists(utils.quickstart_path()):
@@ -53,7 +53,11 @@ def run():
                     pip, "install", "hitchqs", "--upgrade",
                 ])
                 quickstart = abspath(join(utils.quickstart_path(), "bin", "quickstart"))
-                os.execve(quickstart, [quickstart] + arguments[1:], utils.execution_env())
+                os.execve(
+                    quickstart,
+                    [quickstart] + [arguments[0][2:], ] + arguments[1:],
+                    utils.execution_env()
+                )
                 return
             except utils.CalledProcessError:
                 rmtree(utils.quickstart_path(), ignore_errors=True)
