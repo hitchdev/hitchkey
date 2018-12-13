@@ -25,13 +25,13 @@ Quickstart Skeleton:
 
 Quickstart Tutorial:
   about: |
-    Running "hk --tutorial key" will create a tutorial
+    Running "hk --demo key" will create a demo
     template demonstrating the features of hitchkey.
   steps:
   - Run:
       cmd: |
         cd /hitchkey/example/
-        hk --tutorial key
+        hk --demo key
   - Run:
       cmd: ls /hitchkey/example/hitch/
       will output: |-

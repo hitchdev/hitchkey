@@ -35,7 +35,7 @@ def run():
     )
 
     if len(arguments) > 0:
-        if arguments[0] == "--tutorial" or arguments[0] == "--skeleton":
+        if arguments[0] == "--demo" or arguments[0] == "--skeleton":
             try:
                 utils.ensure_share_directory_exists()
                 if not exists(utils.quickstart_path()):
