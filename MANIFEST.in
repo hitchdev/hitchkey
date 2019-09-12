@@ -1,8 +1,3 @@
 include VERSION
 include LICENSE.txt
 recursive-include docs *.md
-recursive-include hitch *.in
-recursive-include hitch *.py
-recursive-include hitch *.story
-recursive-include hitch *.txt
-recursive-include hitch *.yml

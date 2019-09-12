@@ -35,6 +35,7 @@ setup(name="hitchkey",
     version=read('VERSION').replace('\n', ''),
     description="HitchKey bootstrapper - set up a development environment.",
     long_description=read('README.md'),
+    long_description_content_type="text/markdown",
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
