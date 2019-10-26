@@ -1,42 +1,77 @@
 # HitchKey
 
-HitchKey is a python 3 framework to let you easily run short,
-ad hoc python code snippets from the command line.
+HitchKey is a python task runner.
 
-It is designed to be used to trigger tasks like building code,
-running tests, generating documentation, linting, reformatting
-code and deploying code.
+It was designed to be write and run ad hoc project tasks like
+building, running tests, generating documentation, linting,
+reformatting and deploying code. It runs ad hoc tasks from a
+file called key.py in an isolated, self-updating python 3
+virtualenv.
 
-Example [key.py](https://github.com/crdoconnor/strictyaml/blob/master/hitch/key.py)
-from [StrictYAML](https://hitchdev.com/strictyaml) can be used.
+hitch/hitchreqs.in:
+
+hitch/key.py
+
+```python
+from commandlib import CommandError, Command, python, python_bin
+from hitchrun import DIR, expected
+
+# Usable path.py objects -- https://pathpy.readthedocs.io/en/stable/api.html
+
+# DIR.gen -- build directory (~/.hitch/xxxxxx, where the symlink 'gen' links to)
+# DIR.project -- the directory containng the "hitch" folder.
+# DIR.key -- the directory this file - key.py is in.
+# DIR.share -- ~/.hitch/share - build folder shared build artefacts.
+# DIR.cur -- the directory "hk" was run in.
+
+
+# If "expected" is used, no stacktrace will be displayed for that exception
+@expected(CommandError)
+def hello(argument):
+    """
+    Try running "hk hello world".
+    """
+    # https://pathpy.readthedocs.io/en/stable/api.html
+    DIR.gen.joinpath("hello.txt").write_text(argument)
+
+    # https://hitchdev.com/commandlib/
+    Command("cat", "hello.txt").in_dir(DIR.gen).run()
+
+
+@expected(CommandError)
+def runcommand():
+    """
+    Run python 3 code with the hk virtualenv.
+    """
+    python("pythoncode.py").run()             # run python code using this project's virtualenv
+    python_bin.python("pythoncode.py").run()  # equivalent
+```
+
+hitch/hitchreqs.in:
+
+```
+hitchrun
+# add python packages here and they will be installed automagically
+```
+
+
 
 ```
 $ hk
 
 Usage: hk command [args]
 
-          bdd - Run story matching keywords.
-       docgen - Build documentation.
-         rbdd - Run story matching keywords and rewrite if changed.
-  regressfile - Run all stories in filename 'filename' in python 2 and 3.
-   regression - Run regression testing - lint and then run all tests.
-     reformat - Reformat using black and then relint.
-         lint - Lint project code and hitch code.
-       deploy - Deploy to pypi as specified version.
+       hello - Try running "hk hello world".
+  runcommand - Run python 3 code with the hk virtualenv.
 
 Run 'hk help [command]' to get more help on a particular command.
+
+
+  hk --upgradepip - Upgrade hitch virtualenv's setuptools and pip
+     hk --upgrade - Upgrade all dependencies in hitchreqs.in
+  hk --cleanshare - Delete ~/.hitch/share/ folder.
+       hk --clean - Delete gen folder
 ```
-
-## Features
-
-* Run "hk command" in any directory or subdirectory in your project and it will run the corresponding method in the key.py file.
-
-* Automatically freezes new packages specified in hitchreqs.in in hitchreqs.txt and keeps the isolated project virtualenv  up to date every time a command is run.
-
-* Creates a project build folder which can be easily accessed with a quick shortcut (DIR.gen) as well as all other commonly required directories (project directory, shared build path, etc.).
-
-* Provides an inbuilt mechanism for bootstrapping various different kinds of hitchkey environments.
-
 
 ## Getting started
 

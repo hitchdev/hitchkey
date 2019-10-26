@@ -6,3 +6,4 @@ build/
 dist/
 hitchkey.egg-info/
 example/
+temp/

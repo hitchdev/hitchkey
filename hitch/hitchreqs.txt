@@ -72,5 +72,5 @@ wcwidth==0.1.7            # via prompt-toolkit, pyte
 webencodings==0.5.1       # via bleach
 
 # The following packages are considered to be unsafe in a requirements file:
-# pip==19.2.3               # via hitchrun
-# setuptools==41.2.0        # via flake8, ipython, twine
+# pip==19.3.1               # via hitchrun
+# setuptools==41.4.0        # via flake8, ipython, twine
