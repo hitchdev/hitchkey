@@ -1,14 +1,23 @@
 # HitchKey
 
-HitchKey is a python task runner.
+HitchKey is a python task runner designed to run project tasks
+like building code, running tests, generating docs, linting,
+reformatting and triggering deployments.
 
-It was designed to be write and run ad hoc project tasks like
-building, running tests, generating documentation, linting,
-reformatting and deploying code. It runs ad hoc tasks from a
-file called key.py in an isolated, self-updating python 3
-virtualenv.
+It runs ad hoc tasks from a file called key.py with an isolated,
+self-updating python 3 virtualenv. Installing packages for use
+by your tasks is as simple as adding their names in the
+requirements file and running your task.
 
-hitch/hitchreqs.in:
+It is unique as a task runner in that it attempts to *only* be
+a task runner and provides a means to *install* tools to build
+code, connect to servers, etc. rather than attempting to do so
+itself.
+
+It is especially well suited to team projects as the project
+can be used to build consistent development environments and
+development tasks that are more or less invariant no matter
+which machine
 
 hitch/key.py
 
@@ -75,35 +84,35 @@ Run 'hk help [command]' to get more help on a particular command.
 
 ## Getting started
 
-The best way to install the bootstrapper is with [pipsi](https://github.com/mitsuhiko/pipsi):
+First ensure that you do not have a virtualenv activated.
 
-```
-pipsi install hitchkey
-```
-
-It's also safe to install in the system python with sudo pip (hitchkey is dependencyless):
+It's recommended that you install the bootstrap script in the system python
+environment:
 
 ```
 sudo pip install hitchkey
 ```
 
-You can then run this command in the root folder of a project you are in:
+This script is small, dependencyless, works on python 2 and python 3 and has
+just one executable command: hk. It is also safe to install using anaconda or
+pipsi if you prefer.
 
 ```
-hk --tutorial key
+hk --demo key
 
 hk helloworld
 ```
 
-It will create a new directory called "hitch" and put five things in there:
+This will create a new directory called "hitch" and put five things in there:
 
-* key.py - the commands which you can run with "hk".
-* gen - a symlink to the gen folder (e.g. ~/.hitch/ltnd0x) which contains the hitchkey's python 3 virtualenv and build folder.
-* hitchreqs.in - the python packages which you want installed in this virtualenv.
-* hitchreqs.txt - the compiled / frozen list of all the packages (does not need to be edited by hand).
-* __pycache__ - folder containing the compiled version of key.py.
+* ```key.py``` - the methods which you can run with "hk command".
+* ```gen``` - a symlink to the gen folder (e.g. ~/.hitch/ltnd0x) which contains the hitchkey's python 3 virtualenv and build folder.
+* ```hitchreqs.in``` - the python packages which you want installed in this virtualenv.
+* ```hitchreqs.txt``` - the compiled and frozen list of all the packages (does not need to be edited by hand).
+* ```__pycache__``` - folder containing the compiled version of key.py.
 
-Then opening hitch/key.py in a text editor and poking around.
+If you open hitch/key.py in a text editor and poke around and run 'hk' in that folder you can see what
+it is capable of.
 
 
 ## Using hitchkey when you already have a key.py
@@ -111,7 +120,7 @@ Then opening hitch/key.py in a text editor and poking around.
 Once installed, you can simply cd to any project directory with a key.py file or a hitch/key.py file
 and run 'hk' and it will set up the environment, installing all the packages specified in hitchreqs.txt.
 
-## Why?
+## Why hitchkey instead of make/pyinvoke/rake?
 
 This project grew out of a bash script that I kept creating repeatedly called "dev.sh" that I used to
 keep in the root of every project. I would use it to run various development environment workflow tasks

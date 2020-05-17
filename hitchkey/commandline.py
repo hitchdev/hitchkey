@@ -78,7 +78,10 @@ def run():
     if not keypy_filename:
         sys.stderr.write("key.py not found in the following directories:\n\n")
         sys.stderr.write('\n'.join(directories_checked))
-        sys.stderr.write("\n\nCreate a key.py file in a convenient project directory to begin.\n")
+        sys.stderr.write("\n\nIf you are trying to kickstart a new project, try:\n\n")
+        sys.stderr.write("    hk --skeleton:\n")
+        sys.stderr.write("\n\nIf you want to see what hitchkey is capable of, try:\n\n")
+        sys.stderr.write("    hk --demo:\n")
         sys.exit(1)
 
     keypy_directory = dirname(keypy_filename)
