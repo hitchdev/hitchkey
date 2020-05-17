@@ -42,7 +42,6 @@ def run():
                     utils.check_call([
                         virtualenv,
                         utils.quickstart_path(),
-                        "--no-site-packages",
                         "-p", python3
                     ])
                 pip = join(utils.quickstart_path(), "bin", "pip")
