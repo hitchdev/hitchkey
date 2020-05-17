@@ -110,7 +110,6 @@ def run():
             utils.check_call([
                 virtualenv,
                 join(genpath, "hvenv"),
-                "--no-site-packages",
                 "-p", python3
             ])
             utils.check_call([
