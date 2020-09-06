@@ -7,3 +7,4 @@ dist/
 hitchkey.egg-info/
 example/
 temp/
+bootstrap/hk
