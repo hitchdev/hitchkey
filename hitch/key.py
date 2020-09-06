@@ -3,7 +3,7 @@ from strictyaml import MapPattern, Map, Str
 from hitchrun import expected, DIR
 from hitchstory import GivenDefinition, GivenProperty, InfoDefinition, InfoProperty
 from icommandlib import ICommandError
-from commandlib import Command
+from commandlib import Command, CommandError
 from pathquery import pathquery
 from strictyaml import Int
 from commandlib import python
@@ -27,12 +27,16 @@ class Engine(BaseEngine):
         self._debug = debug
 
     def set_up(self):
+        from build import HitchKeyBuild
+        self._build = HitchKeyBuild(self.path)
+        self._build.ensure_built()
+
         self.path.state = self.path.gen.joinpath("state")
 
         self.path.state.rmtree(ignore_errors=True)
         self.path.state.mkdir()
 
-        self.path.example = self.path.project / "example"
+        self.path.example = self.path.gen / "example"
 
         if self.path.example.exists():
             self.path.example.rmtree()
@@ -44,37 +48,37 @@ class Engine(BaseEngine):
                 filepath.dirname().makedirs()
             filepath.write_text(text)
 
-        ubuntu = hitchbuildvagrant.Box("hitchkey", "ubuntu-trusty-64")\
-                                  .with_download_path(self.path.share)\
-                                  .which_syncs(self.path.project, "/hitchkey")
+        #ubuntu = hitchbuildvagrant.Box("hitchkey", "ubuntu-trusty-64")\
+                                  #.with_download_path(self.path.share)\
+                                  #.which_syncs(self.path.project, "/hitchkey")
 
-        setup_code = self.given.get("setup", "")
+        #setup_code = self.given.get("setup", "")
 
-        class PythonSnapshot(hitchbuildvagrant.Snapshot):
-            def setup(self):
-                self.cmd(setup_code).run()
-                self.cmd("sudo apt-get install python-setuptools -y").run()
-                self.cmd("sudo apt-get install build-essential -y").run()
-                self.cmd("sudo apt-get install python-pip -y").run()
-                self.cmd("sudo apt-get install python-virtualenv -y").run()
-                self.cmd("sudo apt-get install python3 -y").run()
-                self.cmd("cd /hitchkey/ ; sudo pip install .").run()
+        #class PythonSnapshot(hitchbuildvagrant.Snapshot):
+            #def setup(self):
+                #self.cmd(setup_code).run()
+                #self.cmd("sudo apt-get install python-setuptools -y").run()
+                #self.cmd("sudo apt-get install build-essential -y").run()
+                #self.cmd("sudo apt-get install python-pip -y").run()
+                #self.cmd("sudo apt-get install python-virtualenv -y").run()
+                #self.cmd("sudo apt-get install python3 -y").run()
+                #self.cmd("cd /hitchkey/ ; sudo pip install .").run()
 
-        setuphash = md5(setup_code.encode('utf8')).hexdigest()
+        #setuphash = md5(setup_code.encode('utf8')).hexdigest()
 
-        self.snapshot = PythonSnapshot("hitchkey_{}".format(setuphash), ubuntu).with_build_path(self.path.gen)
-        self.snapshot.ensure_built()
-        self.snapshot.box.vagrant("rsync").run()
-        self.snapshot.cmd("cd /hitchkey/ ; sudo pip uninstall hitchkey -y ; sudo pip install .").run()
+        #self.snapshot = PythonSnapshot("hitchkey_{}".format(setuphash), ubuntu).with_build_path(self.path.gen)
+        #self.snapshot.ensure_built()
+        #self.snapshot.box.vagrant("rsync").run()
+        #self.snapshot.cmd("cd /hitchkey/ ; sudo pip uninstall hitchkey -y ; sudo pip install .").run()
 
     @validate(timeout=Int(), exit_code=Int())
     @no_stacktrace_for(ICommandError)
     @no_stacktrace_for(AssertionError)
     def run(self, cmd=None, will_output=None, timeout=240, exit_code=0):
-        process = self.snapshot.cmd(cmd.replace("\n", " ; ")).interact().screensize(160, 100).run()
+        process = self._build.cmd(*cmd.split(" ")).interact().screensize(160, 100).run()
         process.wait_for_finish(timeout=timeout)
 
-        actual_output = '\n'.join(process.stripshot().split("\n")[:-1])
+        actual_output = process.stripshot()
 
         if will_output is not None:
             try:
@@ -102,8 +106,7 @@ class Engine(BaseEngine):
 
     def tear_down(self):
         """Clean out the state directory."""
-        if hasattr(self, 'snapshot'):
-            self.snapshot.shutdown()
+        pass
 
 
 def _story_collection(rewrite=False, debug=False):
@@ -197,3 +200,18 @@ def deploy(version):
 
 def clean():
     print("destroy all created vms")
+
+
+def buildhk():
+    from build import HitchKeyBuild
+    hkb = HitchKeyBuild(DIR)
+    hkb.ensure_built()
+    hkb.cmd("hk", "--help").run()
+
+@expected(CommandError)
+def dogfoodhk():
+    """Compile and install new bootstrap to dogfood."""
+    bootstrap_path = DIR.project / "bootstrap"
+    Command("go")("build", "-ldflags=-s -w", "hk.go").in_dir(bootstrap_path).run()
+    bootstrap_path.joinpath("hk").copy("/home/colm/bin/hk")
+    

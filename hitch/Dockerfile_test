@@ -1,0 +1,22 @@
+FROM ubuntu:focal
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install tzdata -y
+
+RUN echo "Europe/London" > /etc/timezone && dpkg-reconfigure -f noninteractive tzdata
+
+RUN adduser root sudo && apt-get install -y sudo
+
+RUN apt-get install golang-go python-setuptools build-essential python3-pip virtualenv python3 -y
+
+RUN useradd -m -d /home/example/ example
+
+ADD bootstrap/ /hitchkey/
+
+RUN cd /hitchkey/ ; go build -ldflags="-s -w" hk.go
+
+RUN cd /hitchkey/ ; cp hk /usr/bin
+
+USER example
+WORKDIR /home/example/
