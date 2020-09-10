@@ -127,7 +127,6 @@ func execute() {
         }
         
         if arguments[1] == "--clean" {
-            fmt.Println(checkdir)
             realized_hitch_folder2, err2 := filepath.EvalSymlinks(checkdir + "/" + "gen")
             if err2 == nil {
                 fmt.Println("Cleaning " + realized_hitch_folder2)
