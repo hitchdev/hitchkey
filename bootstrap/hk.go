@@ -78,17 +78,17 @@ func die(message string) {
 }
 
 func fileExists(filename string) bool {
-    info, err := os.Stat(filename)
+    _, err := os.Stat(filename)
     if os.IsNotExist(err) {
         return false
     }
-    return !info.IsDir()
+    return true
 }
 
 func currentDirectory() string {
     path, err := os.Getwd()
     if err != nil {
-        return ""
+        die("Error getting current directory")
     }
     return path
 }
