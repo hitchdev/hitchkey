@@ -14,6 +14,32 @@ import (
     "time"
 )
 
+const dockerhitch = `FROM ubuntu:focal
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install tzdata -y
+
+RUN echo "Europe/London" > /etc/timezone && dpkg-reconfigure -f noninteractive tzdata
+
+RUN adduser root sudo && apt-get install -y sudo
+
+RUN apt-get update && apt-get upgrade -y
+
+RUN apt-get install \
+    python-setuptools build-essential python3-pip \
+    virtualenv python3 inetutils-ping git \
+    golang-go -y
+
+RUN useradd -ms /bin/bash hitch
+RUN adduser hitch sudo
+RUN echo "hitch ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+USER hitch
+RUN mkdir /home/hitch/gen
+WORKDIR /home/hitch/
+`
+
 const charset = "abcdefghijklmnopqrstuvwxyz1234567890"
 
 func new_hitch_dir() string {
@@ -34,17 +60,17 @@ func new_hitch_dir() string {
 
 
 func writefile(filename string, content string) {
-    f, err := os.Create(filename)
+    filehandle, create_err := os.Create(filename)
 
-    if err != nil {
-        die("Error writing file")
+    if create_err != nil {
+        die("Error creating file")
     }
 
-    defer f.Close()
+    defer filehandle.Close()
 
-    _, err2 := f.WriteString(content)
+    _, write_err := filehandle.WriteString(content)
 
-    if err2 != nil {
+    if write_err != nil {
         die("Error writing file")
     }
 }
@@ -94,10 +120,8 @@ func currentDirectory() string {
 }
 
 
-
-func execute() {
-    arguments := os.Args
-    checkdir := currentDirectory()
+func get_hitch_dir() (string, []string) {
+checkdir := currentDirectory()
     hitchfolder_path := ""
     
     var checked_folders []string
@@ -120,6 +144,21 @@ func execute() {
         checkdir = filepath.Dir(checkdir)
     }
     
+    if checkdir == "/" {
+        return "", checked_folders
+    } else {
+        return checkdir, checked_folders
+    }
+}
+
+
+
+func execute() {
+    arguments := os.Args
+    
+    hitchdir, checked_folders := get_hitch_dir()
+
+    
     if len(arguments) == 2 {
         if arguments[1] == "--help" {
             fmt.Println("help")
@@ -127,11 +166,11 @@ func execute() {
         }
         
         if arguments[1] == "--clean" {
-            realized_hitch_folder2, err2 := filepath.EvalSymlinks(checkdir + "/" + "gen")
-            if err2 == nil {
-                fmt.Println("Cleaning " + realized_hitch_folder2)
-                os.RemoveAll(realized_hitch_folder2)
-                os.Remove(checkdir + "/" + "gen")
+            realized_hitch_folder, err := filepath.EvalSymlinks(hitchdir + "/" + "gen")
+            if err == nil {
+                fmt.Println("Cleaning " + realized_hitch_folder)
+                os.RemoveAll(realized_hitch_folder)
+                os.Remove(hitchdir + "/" + "gen")
                 os.Exit(0)
             } else {
                 die("No installed project, nothing to clean.")
@@ -139,25 +178,25 @@ func execute() {
         }
     }
     
-    if checkdir == "/" {
+    if hitchdir == "" {
         die("key.py not found in any directory\n\n" + strings.Join(checked_folders, "\n"))
     }
 
-    if !fileExists(checkdir + "/" + "gen") {
+    if !fileExists(hitchdir + "/" + "gen") {
         genpath := new_hitch_dir()
         fmt.Println("Creating new hitch folder " + genpath)
         os.MkdirAll(genpath, os.ModePerm)
-        os.Symlink(genpath, checkdir + "/" + "gen")
+        os.Symlink(genpath, hitchdir + "/" + "gen")
         
         run_command(virtualenv(), []string{genpath + "/" + "hvenv", "-p", python3()})
         run_command(
             genpath + "/" + "hvenv" + "/" + "bin" + "/" + "pip",
             []string{"install", "hitchrun"},
         )
-        writefile(genpath + "/" + "hvenv" + "/" + "linkfile", checkdir)
+        writefile(genpath + "/" + "hvenv" + "/" + "linkfile", hitchdir)
     }
     
-    realized_hitch_folder, err := filepath.EvalSymlinks(checkdir + "/" + "gen")
+    realized_hitch_folder, err := filepath.EvalSymlinks(hitchdir + "/" + "gen")
     
     if err != nil {
         die("gen file screw up")
