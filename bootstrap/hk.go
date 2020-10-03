@@ -151,6 +151,29 @@ checkdir := currentDirectory()
     }
 }
 
+func realized_hitch_folder(hitchdir string) string {
+    folder, err := filepath.EvalSymlinks(hitchdir + "/" + "gen")
+    
+    if err != nil {
+        die("Error getting hitch folder from : " + hitchdir + "/" + "gen")
+    }
+    
+    return folder
+}
+
+func is_there_hitch_folder(hitchdir string) bool {
+    _, err := filepath.EvalSymlinks(hitchdir + "/" + "gen")
+    
+    return err != nil
+}
+
+func clean(projectpath string) {
+    hitchfolder := realized_hitch_folder(projectpath)
+    fmt.Println("Cleaning " + hitchfolder)
+    os.RemoveAll(hitchfolder)
+    os.Remove(projectpath + "/" + "gen")
+    os.Exit(0)
+}
 
 
 func execute() {
@@ -166,12 +189,8 @@ func execute() {
         }
         
         if arguments[1] == "--clean" {
-            realized_hitch_folder, err := filepath.EvalSymlinks(hitchdir + "/" + "gen")
-            if err == nil {
-                fmt.Println("Cleaning " + realized_hitch_folder)
-                os.RemoveAll(realized_hitch_folder)
-                os.Remove(hitchdir + "/" + "gen")
-                os.Exit(0)
+            if is_there_hitch_folder(hitchdir) {
+                clean(hitchdir)
             } else {
                 die("No installed project, nothing to clean.")
             }
@@ -180,41 +199,36 @@ func execute() {
     
     if hitchdir == "" {
         die("key.py not found in any directory\n\n" + strings.Join(checked_folders, "\n"))
+    } else {
+        if !fileExists(hitchdir + "/" + "gen") {
+            genpath := new_hitch_dir()
+            fmt.Println("Creating new hitch folder " + genpath)
+            os.MkdirAll(genpath, os.ModePerm)
+            os.Symlink(genpath, hitchdir + "/" + "gen")
+            
+            run_command(virtualenv(), []string{genpath + "/" + "hvenv", "-p", python3()})
+            run_command(
+                genpath + "/" + "hvenv" + "/" + "bin" + "/" + "pip",
+                []string{"install", "hitchrun"},
+            )
+            writefile(genpath + "/" + "hvenv" + "/" + "linkfile", hitchdir)
+        } else {
+            hitchrun := realized_hitch_folder(hitchdir) + "/" + "hvenv" + "/" + "bin" + "/" + "hitchrun"
+            syscall.Exec(
+                hitchrun,
+                append([]string{hitchrun}, arguments[1:]...),
+                os.Environ(),
+            )
+            os.Exit(0)
+        }
     }
 
-    if !fileExists(hitchdir + "/" + "gen") {
-        genpath := new_hitch_dir()
-        fmt.Println("Creating new hitch folder " + genpath)
-        os.MkdirAll(genpath, os.ModePerm)
-        os.Symlink(genpath, hitchdir + "/" + "gen")
-        
-        run_command(virtualenv(), []string{genpath + "/" + "hvenv", "-p", python3()})
-        run_command(
-            genpath + "/" + "hvenv" + "/" + "bin" + "/" + "pip",
-            []string{"install", "hitchrun"},
-        )
-        writefile(genpath + "/" + "hvenv" + "/" + "linkfile", hitchdir)
-    }
     
-    realized_hitch_folder, err := filepath.EvalSymlinks(hitchdir + "/" + "gen")
-    
-    if err != nil {
-        die("gen file screw up")
-    }
-       
-    hitchrun := realized_hitch_folder + "/" + "hvenv" + "/" + "bin" + "/" + "hitchrun"
-    
-    syscall.Exec(
-        hitchrun,
-        append([]string{hitchrun}, arguments[1:]...),
-        os.Environ(),
-    )
-    os.Exit(0)
 }
 
 func main() {
     if runtime.GOOS == "windows" {
-        fmt.Println("HitchKey does not yet support windows.")
+        die("HitchKey does not yet support windows.")
     } else {
         execute()
     }
