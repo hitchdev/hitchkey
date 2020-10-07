@@ -1,3 +1,0 @@
-go build -ldflags='-s -w' *.go
-echo "compiled"
-./hk
