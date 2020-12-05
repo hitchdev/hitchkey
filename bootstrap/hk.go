@@ -22,22 +22,16 @@ const dockerhitch = `FROM ubuntu:focal
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install tzdata -y
-
-RUN echo "Europe/London" > /etc/timezone && dpkg-reconfigure -f noninteractive tzdata
+RUN apt-get update && apt-get install tzdata -y && echo "Europe/London" > /etc/timezone && dpkg-reconfigure -f noninteractive tzdata
 
 RUN adduser root sudo && apt-get install -y sudo
 
-RUN apt-get update && apt-get upgrade -y
-
-RUN apt-get install \
+RUN apt-get update && apt-get upgrade -y && apt-get install \
     python-setuptools build-essential python3-pip \
     virtualenv python3 inetutils-ping git \
-    golang-go wget curl -y
-
-RUN apt-get install build-essential make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev llvm libncurses5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev -y
-
-RUN apt-get install make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev -y
+    golang-go wget curl libssl-dev zlib1g-dev libbz2-dev \
+    libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev \
+    xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev -y
 
 
 
@@ -205,7 +199,7 @@ func dockerrun(projectdir string, hitchcode string, arguments []string) {
         docker(), 
         append(
             []string{
-                "run", "-v",
+                "run", "--rm", "-v",
                 projectdir + ":/home/hitch/project",
                 "--mount",
                 "type=volume,source=hitchv-" + hitchcode + ",destination=/gen",
@@ -287,7 +281,7 @@ func execute() {
                     append(
                         []string{
                             "/usr/bin/docker",
-                            "run", "-it", "-v",
+                            "run", "--rm", "-it", "-v",
                             projectdir + ":/home/hitch/project",
                             "--mount",
                             "type=volume,source=hitchv-" + hitchcode + ",destination=/gen",
