@@ -7,5 +7,5 @@ dist/
 hitchkey.egg-info/
 example/
 temp/
-bootstrap/hk
-bootstrap/hk.exe
+hk
+hk.exe
