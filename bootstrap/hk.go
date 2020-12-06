@@ -3,7 +3,7 @@ package main
 import (
     "os"
     "fmt"
-    "runtime"
+    //"runtime"
     "path/filepath"
     "syscall"
     "encoding/json"
@@ -311,10 +311,6 @@ func execute() {
 }
 
 func main() {
-    if runtime.GOOS == "windows" {
-        die("HitchKey does not yet support windows.")
-    } else {
-        execute()
-    }
+    execute()
 }
 
