@@ -3,7 +3,8 @@ package main
 import (
     "os"
     "fmt"
-    //"runtime"
+    "runtime"
+    "io/ioutil"
     "path/filepath"
     "syscall"
     "encoding/json"
@@ -18,7 +19,7 @@ import (
 
 
 
-const dockerhitch = `FROM ubuntu:focal
+const dockerhitch1 = `FROM ubuntu:focal
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -33,6 +34,9 @@ RUN apt-get update && apt-get upgrade -y && apt-get install \
     libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev \
     xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev -y
 
+`
+
+const dockerhitch2 = `
 
 
 RUN useradd -ms /bin/bash hitch
@@ -67,6 +71,17 @@ func new_hitch_dir() string {
 }
 
 
+func readfile_or_empty(filename string) string {
+    if fileExists(filename) {
+        data, err := ioutil.ReadFile(filename)
+        if err != nil {
+            die("Error reading file: " + filename)
+        }
+        return string(data)
+    } else {
+        return ""
+    }
+}
 
 func writefile(filename string, content string) {
     filehandle, create_err := os.Create(filename)
@@ -247,8 +262,19 @@ func execute() {
                     os.Symlink(genpath, hitchdir + "/" + "gen")
                     hitchcode := filepath.Base(genpath)
                     
-                    writefile(genpath + "/" + "Dockerhitch", dockerhitch)
-                    run_command(docker(), []string{"build", ".", "-f", genpath + "/" + "Dockerhitch", "-t", "hitch-" + hitchcode})
+                    asroot := readfile_or_empty(hitchdir + "/" + "asroot.sh")
+                    
+                    if asroot == "" {
+                        dockercontents := dockerhitch1 + dockerhitch2
+                        writefile(genpath + "/" + "Dockerhitch", dockercontents)
+                    } else {
+                        dockercontents := dockerhitch1 + "\n\nCOPY asroot.sh /\nRUN chmod +x /asroot.sh\nRUN ./asroot.sh\n\n" + dockerhitch2
+                        writefile(genpath + "/" + "asroot.sh", asroot)
+                        writefile(genpath + "/" + "Dockerhitch", dockercontents)
+                    }
+                    
+//                     writefile(genpath + "/" + "Dockerhitch", dockerhitch1 + asroot + dockerhitch2)
+                    run_command(docker(), []string{"build", genpath, "-f", genpath + "/" + "Dockerhitch", "-t", "hitch-" + hitchcode})
                     run_command(docker(), []string{"volume", "create", "hitchv-" + hitchcode})
                     dockerrun(projectdir, hitchcode, []string{"virtualenv", "/gen/hvenv", "--python=python3"})
                     dockerrun(projectdir, hitchcode, []string{"/gen/hvenv/bin/pip", "install", "pip==20.2"})
@@ -275,25 +301,36 @@ func execute() {
             genpath := realized_hitch_folder(hitchdir)
             if fileExists(genpath + "/" + "Dockerhitch") {
                 hitchcode := filepath.Base(genpath)
-
-                err := syscall.Exec(
-                    "/usr/bin/docker",
-                    append(
-                        []string{
-                            "/usr/bin/docker",
-                            "run", "--rm", "-it", "-v",
-                            projectdir + ":/home/hitch/project",
-                            "--mount",
-                            "type=volume,source=hitchv-" + hitchcode + ",destination=/gen",
-                            "--workdir", "/home/hitch/project",
-                            "hitch-" + hitchcode,
-                            "/gen/hvenv/bin/hitchrun",
-                        },
-                        arguments[1:]...
-                    ),
-                    os.Environ(),
+                docker_arguments := append(
+                    []string{
+                        "run", "--rm", "-it", "-v",
+                        projectdir + ":/home/hitch/project",
+                        "--network", "bridge",
+                        "--mount",
+                        "type=volume,source=hitchv-" + hitchcode + ",destination=/gen",
+                        "--workdir", "/home/hitch/project",
+                        "hitch-" + hitchcode,
+                        "/gen/hvenv/bin/hitchrun",
+                    },
+                    arguments[1:]...
                 )
-                fmt.Println(err)
+                
+                if runtime.GOOS == "windows" {
+                    cmd := exec.Command("docker", docker_arguments...)
+                    cmd.Stdout = os.Stdout
+                    cmd.Stdin = os.Stdin
+                    cmd.Stderr = os.Stderr
+                    out_err := cmd.Run()
+                    fmt.Println(out_err)
+                } else {
+                    out_err := syscall.Exec(
+                        "/usr/bin/docker",
+                        append([]string{"/usr/bin/docker"}, docker_arguments...),
+                        os.Environ(),
+                    )
+                    fmt.Println(out_err)
+                }
+                
                 os.Exit(0)
             } else {
                 hitchrun := genpath + "/" + "hvenv" + "/" + "bin" + "/" + "hitchrun"
