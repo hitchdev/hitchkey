@@ -34,6 +34,8 @@ RUN apt-get update && apt-get upgrade -y && apt-get install \
     libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev \
     xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev -y
 
+ENV PIP_CERT=/etc/ssl/certs/
+
 `
 
 const dockerhitch2 = `
@@ -277,7 +279,7 @@ func execute() {
                     run_command(docker(), []string{"build", genpath, "-f", genpath + "/" + "Dockerhitch", "-t", "hitch-" + hitchcode})
                     run_command(docker(), []string{"volume", "create", "hitchv-" + hitchcode})
                     dockerrun(projectdir, hitchcode, []string{"virtualenv", "/gen/hvenv", "--python=python3"})
-                    dockerrun(projectdir, hitchcode, []string{"/gen/hvenv/bin/pip", "install", "pip==20.2"})
+                    dockerrun(projectdir, hitchcode, []string{"/gen/hvenv/bin/pip", "install", "pip==20.3.1"})
                     dockerrun(projectdir, hitchcode, []string{"/gen/hvenv/bin/pip", "install", "-r", "/home/hitch/project/hitch/hitchreqs.txt"})
                     dockerrun(projectdir, hitchcode, []string{"bash", "-c", "echo /home/hitch/project/hitch > /gen/hvenv/linkfile"})
                 } else if arguments[1] == "--folder" {
