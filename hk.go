@@ -151,7 +151,7 @@ func currentDirectory() string {
 
 
 func get_hitch_dir() (string, []string) {
-checkdir := currentDirectory()
+    checkdir := currentDirectory()
     hitchfolder_path := ""
     
     var checked_folders []string
@@ -195,6 +195,20 @@ func is_there_hitch_folder(hitchdir string) bool {
     _, err := filepath.EvalSymlinks(hitchdir + "/" + "gen")
     
     return err != nil
+}
+
+func whichdocker() string {
+    if runtime.GOOS == "windows" {
+        return "docker"
+    } else {
+        output, err := exec.Command("which", "docker").Output()
+        
+        if err != nil {
+            die("Error calling 'which docker' to try and get the docker location.")
+        }
+        
+        return strings.TrimSuffix(string(output), "\n")
+    }
 }
 
 func clean(projectpath string) {
@@ -307,7 +321,7 @@ func execute() {
                     []string{
                         "run", "--rm", "-it", "-v",
                         projectdir + ":/home/hitch/project",
-                        "--network", "bridge",
+                        "--network", "host",
                         "--mount",
                         "type=volume,source=hitchv-" + hitchcode + ",destination=/gen",
                         "--workdir", "/home/hitch/project",
@@ -317,8 +331,10 @@ func execute() {
                     arguments[1:]...
                 )
                 
+                dockercmd := whichdocker()
+                
                 if runtime.GOOS == "windows" {
-                    cmd := exec.Command("docker", docker_arguments...)
+                    cmd := exec.Command(dockercmd, docker_arguments...)
                     cmd.Stdout = os.Stdout
                     cmd.Stdin = os.Stdin
                     cmd.Stderr = os.Stderr
@@ -326,11 +342,15 @@ func execute() {
                     fmt.Println(out_err)
                 } else {
                     out_err := syscall.Exec(
-                        "/usr/bin/docker",
-                        append([]string{"/usr/bin/docker"}, docker_arguments...),
+                        dockercmd,
+                        append([]string{dockercmd}, docker_arguments...),
                         os.Environ(),
                     )
-                    fmt.Println(out_err)
+                    if out_err != nil {
+                        os.Exit(1)
+                    } else {
+                        os.Exit(0)
+                    }
                 }
                 
                 os.Exit(0)
@@ -341,7 +361,6 @@ func execute() {
                     append([]string{hitchrun}, arguments[1:]...),
                     os.Environ(),
                 )
-                os.Exit(0)
             }
         }
     }
