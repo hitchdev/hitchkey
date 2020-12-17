@@ -30,7 +30,7 @@ RUN adduser root sudo && apt-get install -y sudo
 RUN apt-get update && apt-get upgrade -y && apt-get install \
     python-setuptools build-essential python3-pip \
     virtualenv python3 inetutils-ping git \
-    golang-go wget curl libssl-dev zlib1g-dev libbz2-dev \
+    wget curl libssl-dev zlib1g-dev libbz2-dev \
     libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev \
     xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev -y
 
@@ -107,7 +107,7 @@ func run_command(command string, arguments []string) {
     cmd.Stderr = os.Stderr
     err := cmd.Run()
     if err != nil {
-        die("Error running command")
+        die("Error running command: " + command + " " + strings.Join(arguments, " "))
     }
 }
 
@@ -225,13 +225,24 @@ func clean(projectpath string) {
     os.Exit(0)
 }
 
+func mountdir(projectdir string) string {
+    override_mountdir := os.Getenv("MOUNTDIR")
+    chosendir := projectdir
+    
+    if override_mountdir != "" {
+        chosendir = override_mountdir
+    }
+    
+    return chosendir
+}
+
 func dockerrun(projectdir string, hitchcode string, arguments []string) {
     run_command(
         docker(), 
         append(
             []string{
                 "run", "--rm", "-v",
-                projectdir + ":/home/hitch/project",
+                mountdir(projectdir) + ":/home/hitch/project",
                 "--mount",
                 "type=volume,source=hitchv-" + hitchcode + ",destination=/gen",
                 "hitch-" + hitchcode,
@@ -320,7 +331,7 @@ func execute() {
                 docker_arguments := append(
                     []string{
                         "run", "--rm", "-it", "-v",
-                        projectdir + ":/home/hitch/project",
+                        mountdir(projectdir) + ":/home/hitch/project",
                         "--network", "host",
                         "--mount",
                         "type=volume,source=hitchv-" + hitchcode + ",destination=/gen",
