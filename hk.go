@@ -10,6 +10,7 @@ import (
     "encoding/json"
     "strings"
     "os/exec"
+    "flag"
 
     // dirutils
     "os/user"
@@ -225,8 +226,7 @@ func clean(projectpath string) {
     os.Exit(0)
 }
 
-func mountdir(projectdir string) string {
-    override_mountdir := os.Getenv("MOUNTDIR")
+func mountdir(projectdir string, override_mountdir string) string {
     chosendir := projectdir
     
     if override_mountdir != "" {
@@ -236,13 +236,13 @@ func mountdir(projectdir string) string {
     return chosendir
 }
 
-func dockerrun(projectdir string, hitchcode string, arguments []string) {
+func dockerrun(projectdir string, override_mountdir string, hitchcode string, arguments []string) {
     run_command(
         docker(), 
         append(
             []string{
                 "run", "--rm", "-v",
-                mountdir(projectdir) + ":/home/hitch/project",
+                mountdir(projectdir, override_mountdir) + ":/home/hitch/project",
                 "--mount",
                 "type=volume,source=hitchv-" + hitchcode + ",destination=/gen",
                 "hitch-" + hitchcode,
@@ -279,10 +279,17 @@ func execute() {
         die("key.py not found in any directory\n\n" + strings.Join(checked_folders, "\n"))
     } else {
         projectdir := filepath.Dir(hitchdir)
-
-        if !fileExists(hitchdir + "/" + "gen") {
-            if len(arguments) == 2 {
-                if arguments[1] == "--docker" {
+        
+        use_docker := flag.Bool("docker", false, "build docker environment")
+        use_folder := flag.Bool("folder", false, "build folder environment")
+        noninteractive := flag.Bool("noninteractive", false, "set up a non-interactive environment")
+        mountdirectory := flag.String("mountdir", "", "docker mount directory")
+        flag.Parse()
+        
+        // Anything that starts with hk -- will pass through here...
+        if len(arguments) > 1 && strings.HasPrefix(arguments[1], "--") {            
+            if *use_docker {
+                if !fileExists(hitchdir + "/" + "gen") {
                     genpath := new_hitch_dir()
                     fmt.Println("Creating new hitch folder " + genpath)
                     os.MkdirAll(genpath, os.ModePerm)
@@ -300,14 +307,27 @@ func execute() {
                         writefile(genpath + "/" + "Dockerhitch", dockercontents)
                     }
                     
-//                     writefile(genpath + "/" + "Dockerhitch", dockerhitch1 + asroot + dockerhitch2)
+                    if *noninteractive {
+                        writefile(genpath + "/" + "noninteractive", "yes")
+                    }
+                    
+                    if *mountdirectory != "" {
+                        writefile(genpath + "/" + "mountdirectory", *mountdirectory)
+                    }
+                    
+                    override_mountdir := *mountdirectory
+                    
+    //                     writefile(genpath + "/" + "Dockerhitch", dockerhitch1 + asroot + dockerhitch2)
                     run_command(docker(), []string{"build", genpath, "-f", genpath + "/" + "Dockerhitch", "-t", "hitch-" + hitchcode})
                     run_command(docker(), []string{"volume", "create", "hitchv-" + hitchcode})
-                    dockerrun(projectdir, hitchcode, []string{"virtualenv", "/gen/hvenv", "--python=python3"})
-                    dockerrun(projectdir, hitchcode, []string{"/gen/hvenv/bin/pip", "install", "pip==20.2"})
-                    dockerrun(projectdir, hitchcode, []string{"/gen/hvenv/bin/pip", "install", "-r", "/home/hitch/project/hitch/hitchreqs.txt"})
-                    dockerrun(projectdir, hitchcode, []string{"bash", "-c", "echo /home/hitch/project/hitch > /gen/hvenv/linkfile"})
-                } else if arguments[1] == "--folder" {
+                    dockerrun(projectdir, override_mountdir, hitchcode, []string{"virtualenv", "/gen/hvenv", "--python=python3"})
+                    dockerrun(projectdir, override_mountdir, hitchcode, []string{"/gen/hvenv/bin/pip", "install", "pip==20.2"})
+                    dockerrun(projectdir, override_mountdir, hitchcode, []string{"/gen/hvenv/bin/pip", "install", "-r", "/home/hitch/project/hitch/hitchreqs.txt"})
+                    dockerrun(projectdir, override_mountdir, hitchcode, []string{"bash", "-c", "echo /home/hitch/project/hitch > /gen/hvenv/linkfile"})
+                    os.Exit(0)
+                }
+            } else if *use_folder {
+                if !fileExists(hitchdir + "/" + "gen") {
                     genpath := new_hitch_dir()
                     fmt.Println("Creating new hitch folder " + genpath)
                     os.MkdirAll(genpath, os.ModePerm)
@@ -319,64 +339,73 @@ func execute() {
                         []string{"install", "hitchrun"},
                     )
                     writefile(genpath + "/" + "hvenv" + "/" + "linkfile", hitchdir)
+                    os.Exit(0)
                 }
-            } else {
-                die("key.py found in " + hitchdir + ". Run 'hk --docker' or 'hk --folder' to build")
-            }
-            
-        } else {
-            genpath := realized_hitch_folder(hitchdir)
-            if fileExists(genpath + "/" + "Dockerhitch") {
-                hitchcode := filepath.Base(genpath)
-                docker_arguments := append(
-                    []string{
-                        "run", "--rm", "-it", "-v",
-                        mountdir(projectdir) + ":/home/hitch/project",
-                        "--network", "host",
-                        "--mount",
-                        "type=volume,source=hitchv-" + hitchcode + ",destination=/gen",
-                        "--workdir", "/home/hitch/project",
-                        "hitch-" + hitchcode,
-                        "/gen/hvenv/bin/hitchrun",
-                    },
-                    arguments[1:]...
-                )
-                
-                dockercmd := whichdocker()
-                
-                if runtime.GOOS == "windows" {
-                    cmd := exec.Command(dockercmd, docker_arguments...)
-                    cmd.Stdout = os.Stdout
-                    cmd.Stdin = os.Stdin
-                    cmd.Stderr = os.Stderr
-                    out_err := cmd.Run()
-                    fmt.Println(out_err)
-                } else {
-                    out_err := syscall.Exec(
-                        dockercmd,
-                        append([]string{dockercmd}, docker_arguments...),
-                        os.Environ(),
-                    )
-                    if out_err != nil {
-                        os.Exit(1)
-                    } else {
-                        os.Exit(0)
-                    }
-                }
-                
-                os.Exit(0)
-            } else {
-                hitchrun := genpath + "/" + "hvenv" + "/" + "bin" + "/" + "hitchrun"
-                syscall.Exec(
-                    hitchrun,
-                    append([]string{hitchrun}, arguments[1:]...),
-                    os.Environ(),
-                )
             }
         }
-    }
+            
+        genpath := realized_hitch_folder(hitchdir)
+        if fileExists(genpath + "/" + "Dockerhitch") {
+            hitchcode := filepath.Base(genpath)
+            
+            docker_interactive_args := ""
 
-    
+            if !fileExists(genpath + "/" + "noninteractive") {
+                docker_interactive_args = "-it"
+            }
+            
+            mount_directory := ""
+            
+            if fileExists(genpath + "/" + "mountdirectory") {
+                mount_directory = readfile_or_empty(genpath + "/" + "mountdirectory")
+            }
+
+            docker_arguments := append(
+                []string{
+                    "run", "--rm", docker_interactive_args, "-v",
+                    mountdir(projectdir, mount_directory) + ":/home/hitch/project",
+                    "--network", "host",
+                    "--mount",
+                    "type=volume,source=hitchv-" + hitchcode + ",destination=/gen",
+                    "--workdir", "/home/hitch/project",
+                    "hitch-" + hitchcode,
+                    "/gen/hvenv/bin/hitchrun",
+                },
+                arguments[1:]...
+            )
+            
+            dockercmd := whichdocker()
+            
+            if runtime.GOOS == "windows" {
+                cmd := exec.Command(dockercmd, docker_arguments...)
+                cmd.Stdout = os.Stdout
+                cmd.Stdin = os.Stdin
+                cmd.Stderr = os.Stderr
+                out_err := cmd.Run()
+                fmt.Println(out_err)
+            } else {
+                out_err := syscall.Exec(
+                    dockercmd,
+                    append([]string{dockercmd}, docker_arguments...),
+                    os.Environ(),
+                )
+                if out_err != nil {
+                    os.Exit(1)
+                } else {
+                    os.Exit(0)
+                }
+            }
+            
+            os.Exit(0)
+        } else {
+            hitchrun := genpath + "/" + "hvenv" + "/" + "bin" + "/" + "hitchrun"
+            syscall.Exec(
+                hitchrun,
+                append([]string{hitchrun}, arguments[1:]...),
+                os.Environ(),
+            )
+        }
+    }
 }
 
 func main() {

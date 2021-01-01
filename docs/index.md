@@ -1,11 +1,21 @@
 # HitchKey
 
-HitchKey is a python 3 framework to let you easily run short,
-ad hoc python code snippets from the command line.
+HitchKey is an environment bootstrapper and python3 task invoker
+for running common tasks associated with a software project consistently
+across all (developer or CI) environments.
 
-It is designed to be used to trigger tasks like building code,
-running tests, generating documentation, linting, reformatting
-code and deploying code.
+For example, you can use it to code up a command line interface
+for any project which will:
+
+* Build your project
+* Run all of your end to end tests
+* Run one specific test in your project
+* Run all your unit tests and lint
+* Deploy your project
+* Reformat your code
+
+It is designed to use docker on Windows, Mac OS X or Linux or set up
+environments outside docker on Mac or Linux.
 
 Example [key.py](https://github.com/crdoconnor/strictyaml/blob/master/hitch/key.py)
 from [StrictYAML](https://hitchdev.com/strictyaml) can be used.
@@ -40,7 +50,7 @@ Run 'hk help [command]' to get more help on a particular command.
 
 ## Getting started
 
-The best way to install the bootstrapper is with [pipsi](https://github.com/mitsuhiko/pipsi):
+
 
 ```
 pipsi install hitchkey
