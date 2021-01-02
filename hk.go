@@ -348,10 +348,10 @@ func execute() {
         if fileExists(genpath + "/" + "Dockerhitch") {
             hitchcode := filepath.Base(genpath)
             
-            docker_interactive_args := ""
+            docker_interactive_args := []string{"run", "--rm",}
 
             if !fileExists(genpath + "/" + "noninteractive") {
-                docker_interactive_args = "-it"
+                docker_interactive_args = []string{"run", "--rm", "-it",}
             }
             
             mount_directory := ""
@@ -361,8 +361,9 @@ func execute() {
             }
 
             docker_arguments := append(
+                docker_interactive_args, 
                 []string{
-                    "run", "--rm", docker_interactive_args, "-v",
+                    "-v",
                     mountdir(projectdir, mount_directory) + ":/home/hitch/project",
                     "--network", "host",
                     "--mount",
@@ -370,12 +371,18 @@ func execute() {
                     "--workdir", "/home/hitch/project",
                     "hitch-" + hitchcode,
                     "/gen/hvenv/bin/hitchrun",
-                },
+                }...,
+            )
+            
+            docker_arguments = append(
+                docker_arguments,
                 arguments[1:]...
             )
             
+            fmt.Println(docker_arguments)
+
             dockercmd := whichdocker()
-            
+
             if runtime.GOOS == "windows" {
                 cmd := exec.Command(dockercmd, docker_arguments...)
                 cmd.Stdout = os.Stdout
