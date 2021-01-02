@@ -379,7 +379,7 @@ func execute() {
                 arguments[1:]...
             )
             
-            fmt.Println(docker_arguments)
+            writefile(genpath + "/" + "lastcommand", strings.Join(docker_arguments, " "))
 
             dockercmd := whichdocker()
 
