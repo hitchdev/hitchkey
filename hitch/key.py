@@ -215,3 +215,28 @@ def dogfoodhk():
     Command("go")("build", "-ldflags=-s -w", "hk.go").in_dir(bootstrap_path).run()
     bootstrap_path.joinpath("hk").copy("/home/colm/bin/hk")
     
+@expected(CommandError)
+def multiarch():
+    """Build hk for multiple architectures."""
+    bootstrap_path = DIR.project / "bootstrap"
+    dist_path = DIR.project / "dist"
+    
+    if not dist_path.exists():
+        dist_path.mkdir()
+
+    go = Command("go").in_dir(bootstrap_path)
+    print("Building for linux...")
+    go("build", "-o", "hk-linux-amd64", "-ldflags=-s -w", "hk.go").with_env(GOOS="linux", GOARCH="amd64").run()
+    bootstrap_path.joinpath("hk-linux-amd64").copy(dist_path)
+    
+    print("Building for mac...")
+    go("build", "-o", "hk-darwin-amd64", "-ldflags=-s -w", "hk.go").with_env(GOOS="darwin", GOARCH="amd64").run()
+    bootstrap_path.joinpath("hk-darwin-amd64").copy(dist_path)
+    
+    print("Building for windows...")
+    go("build", "-o", "hk.exe", "-ldflags=-s -w", "hk.go").with_env(GOOS="linux", GOARCH="amd64").run()
+    bootstrap_path.joinpath("hk.exe").copy(dist_path)
+    
+    print("Building MSI For windows...")
+    Command("wixl", "-v", "hk.wxs").in_dir(bootstrap_path).run()
+    bootstrap_path.joinpath("hk.msi").copy(dist_path)

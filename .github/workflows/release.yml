@@ -11,18 +11,22 @@ on:
 jobs:
   generate:
     name: Generate cross-platform builds
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v2
-      - name: Generate build files
-        uses: thatisuday/go-cross-build@v1
-        with:
-            platforms: 'linux/amd64, darwin/amd64, windows/amd64'
-            package: 'hk.go'
-            name: 'hk'
-            compress: 'false'
-            dest: 'dist'
+
+      - name: Install dependencies
+        run: |
+          #sudo apt-get update
+          #sudo apt-get upgrade -y
+          sudo apt-get install python3-virtualenv build-essential
+          sudo apt-get install libreadline-gplv2-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev -y
+          sudo apt-get install golang wixl msitools -y
+          sudo pip install hitchkey
+
+      - name: Build multiarch
+        run: hk multiarch
     
       - name: Upload build-artifacts
         uses: skx/github-action-publish-binaries@master

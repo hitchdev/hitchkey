@@ -9,3 +9,5 @@ example/
 temp/
 hk
 hk.exe
+hk-*
+hk.msi
