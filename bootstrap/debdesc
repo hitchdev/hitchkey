@@ -1,0 +1,15 @@
+Section: metapackages
+Priority: important
+
+Package: hitchkey
+Maintainer: Colm O'Connor <colm.oconnor.github@gmail.com>
+
+Description: A demo metapackage
+
+Depends:
+ python,
+ libreadline-dev
+
+Recommends:
+
+Copy: hk /usr/bin/hk
