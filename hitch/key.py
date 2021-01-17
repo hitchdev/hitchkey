@@ -13,6 +13,9 @@ from path import Path
 from hashlib import md5
 import sys
 
+def _current_version():
+    return DIR.project.joinpath("VERSION").bytes().decode("utf8").rstrip()
+
 
 class Engine(BaseEngine):
     """Engine for running tests and inspecting result."""
@@ -183,20 +186,6 @@ def deploy(version):
     else:
         git("push").run()
 
-    # Set __version__ variable in __init__.py, build sdist and put it back
-    initpy = DIR.project.joinpath(NAME, "__init__.py")
-    original_initpy_contents = initpy.bytes().decode('utf8')
-    initpy.write_text(
-        original_initpy_contents.replace("DEVELOPMENT_VERSION", version)
-    )
-    python("setup.py", "sdist").in_dir(DIR.project).run()
-    initpy.write_text(original_initpy_contents)
-
-    # Upload to pypi
-    python(
-        "-m", "twine", "upload", "dist/{0}-{1}.tar.gz".format(NAME, version)
-    ).in_dir(DIR.project).run()
-
 
 def clean():
     print("destroy all created vms")
@@ -220,27 +209,30 @@ DEBIAN = """Package: hitchkey
 Version: {version}
 Section: custom
 Priority: optional
-Architecture: all
+Architecture: amd64
 Essential: no
 Installed-Size: 3072
 Maintainer: hitchdev.com
-Description: HitchKey
+Description: HitchKey bootstrapper
 """
 
 def debian():
     """Build debian package"""
     debdir = DIR.gen.joinpath("deb")
+    version = _current_version()
     if debdir.exists():
         debdir.rmtree()
     packagedir = debdir / "hitchkey"
     packagedir.makedirs()
     packagedir.joinpath("DEBIAN").mkdir()
-    packagedir.joinpath("DEBIAN", "control").write_text(DEBIAN.format(version="0.7.7"))
+    packagedir.joinpath("DEBIAN", "control").write_text(DEBIAN.format(version=version))
     bindir = packagedir.joinpath("usr", "bin")
     bindir.makedirs()
     DIR.project.joinpath("bootstrap", "hk-linux-amd64").copy(bindir)
     Command("dpkg-deb", "--build", "hitchkey").in_dir(debdir).run()
-    debdir.joinpath("hitchkey.deb").copy(DIR.project / "dist" / "hitchkey-0.7.7.deb")
+    debdir.joinpath("hitchkey.deb").copy(
+        DIR.project / "dist" / "hitchkey-{}.deb".format(version)
+    )
 
 @expected(CommandError)
 def multiarch():
