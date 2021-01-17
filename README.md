@@ -1,18 +1,15 @@
 # HitchKey
 
-HitchKey is a python task runner designed to run project tasks
-like building code, running tests, generating docs, linting,
-reformatting and triggering deployments.
+HitchKey is a multiplatform project python task runner.
+
+It can tie together building code, running tests, generating docs,
+linting and any other automated tasks under one command line interface
+environment running in docker, either in windows, mac or linux.
 
 It runs ad hoc tasks from a file called key.py with an isolated,
 self-updating python 3 virtualenv. Installing packages for use
 by your tasks is as simple as adding their names in the
 requirements file and running your task.
-
-It is unique as a task runner in that it attempts to *only* be
-a task runner and provides a means to *install* tools to build
-code, connect to servers, etc. rather than attempting to do so
-itself.
 
 It is especially well suited to team projects as the project
 can be used to build consistent development environments and
@@ -84,19 +81,7 @@ Run 'hk help [command]' to get more help on a particular command.
 
 ## Getting started
 
-First ensure that you do not have a virtualenv activated.
-
-It's recommended that you install the bootstrap script in the system python
-environment:
-
-```
-sudo pip install hitchkey
-```
-
-This script is small, dependencyless, works on python 2 and python 3 and has
-just one executable command: hk. It is also safe to install using anaconda or
-pipsi if you prefer.
-
+On windows: 
 ```
 hk --demo key
 
