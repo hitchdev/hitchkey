@@ -219,12 +219,19 @@ def dogfoodhk():
 def multiarch():
     """Build hk for multiple architectures."""
     bootstrap_path = DIR.project / "bootstrap"
+    go = Command(bootstrap_path / "go" / "bin" / "go").in_dir(bootstrap_path)
+    tar = Command("tar").in_dir(bootstrap_path)
+    
+    if not Path(go).exists():
+        wget = Command("wget").in_dir(bootstrap_path)
+        wget("wget", "-c", "https://dl.google.com/go/go1.14.2.linux-amd64.tar.gz").ignore_errors().run()
+        tar("xvzf", "go1.14.2.linux-amd64.tar.gz").run()
+    
     dist_path = DIR.project / "dist"
     
     if not dist_path.exists():
         dist_path.mkdir()
 
-    go = Command("go").in_dir(bootstrap_path)
     print("Building for linux...")
     go("build", "-o", "hk-linux-amd64", "hk.go").with_env(GOOS="linux", GOARCH="amd64").run()
     bootstrap_path.joinpath("hk-linux-amd64").copy(dist_path)
@@ -237,6 +244,6 @@ def multiarch():
     go("build", "-o", "hk.exe", "hk.go").with_env(GOOS="windows", GOARCH="amd64").run()
     bootstrap_path.joinpath("hk.exe").copy(dist_path)
     
-    print("Building MSI For windows...")
-    Command("wixl", "-v", "hk.wxs").in_dir(bootstrap_path).run()
-    bootstrap_path.joinpath("hk.msi").copy(dist_path)
+    #print("Building MSI For windows...")
+    #Command("wixl", "-v", "hk.wxs").in_dir(bootstrap_path).run()
+    #bootstrap_path.joinpath("hk.msi").copy(dist_path)

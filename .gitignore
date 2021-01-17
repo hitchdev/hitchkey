@@ -11,3 +11,5 @@ hk
 hk.exe
 hk-*
 hk.msi
+bootstrap/go*.tar.gz
+go/
