@@ -234,7 +234,7 @@ def multiarch():
     bootstrap_path.joinpath("hk-darwin-amd64").copy(dist_path)
     
     print("Building for windows...")
-    go("build", "-o", "hk.exe", "hk.go").with_env(GOOS="linux", GOARCH="amd64").run()
+    go("build", "-o", "hk.exe", "hk.go").with_env(GOOS="windows", GOARCH="amd64").run()
     bootstrap_path.joinpath("hk.exe").copy(dist_path)
     
     print("Building MSI For windows...")
