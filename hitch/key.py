@@ -214,7 +214,34 @@ def dogfoodhk():
     bootstrap_path = DIR.project / "bootstrap"
     Command("go")("build", "hk.go").in_dir(bootstrap_path).run()
     bootstrap_path.joinpath("hk").copy("/home/colm/bin/hk")
-    
+
+
+DEBIAN = """Package: hitchkey
+Version: {version}
+Section: custom
+Priority: optional
+Architecture: all
+Essential: no
+Installed-Size: 3072
+Maintainer: hitchdev.com
+Description: HitchKey
+"""
+
+def debian():
+    """Build debian package"""
+    debdir = DIR.gen.joinpath("deb")
+    if debdir.exists():
+        debdir.rmtree()
+    packagedir = debdir / "hitchkey"
+    packagedir.makedirs()
+    packagedir.joinpath("DEBIAN").mkdir()
+    packagedir.joinpath("DEBIAN", "control").write_text(DEBIAN.format(version="0.7.7"))
+    bindir = packagedir.joinpath("usr", "bin")
+    bindir.makedirs()
+    DIR.project.joinpath("bootstrap", "hk-linux-amd64").copy(bindir)
+    Command("dpkg-deb", "--build", "hitchkey").in_dir(debdir).run()
+    debdir.joinpath("hitchkey.deb").copy(DIR.project / "dist" / "hitchkey-0.7.7.deb")
+
 @expected(CommandError)
 def multiarch():
     """Build hk for multiple architectures."""
@@ -243,6 +270,9 @@ def multiarch():
     print("Building for windows...")
     go("build", "-o", "hk.exe", "hk.go").with_env(GOOS="windows", GOARCH="amd64").run()
     bootstrap_path.joinpath("hk.exe").copy(dist_path)
+    
+    print("Building debian installer...")
+    debian()
     
     #print("Building MSI For windows...")
     #Command("wixl", "-v", "hk.wxs").in_dir(bootstrap_path).run()
