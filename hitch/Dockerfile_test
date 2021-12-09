@@ -12,11 +12,18 @@ RUN apt-get install golang-go python-setuptools build-essential python3-pip virt
 
 RUN useradd -m -d /home/example/ example
 
-ADD bootstrap/ /hitchkey/
 
-RUN cd /hitchkey/ ; go build -ldflags="-s -w" hk.go
+ADD bootstrap/ /hitchkey/bootstrap/
 
-RUN cd /hitchkey/ ; cp hk /usr/bin
+ADD example/ /hitchkey/example/
+
+RUN chown -R example:example /hitchkey/example/
+
+RUN cd /hitchkey/bootstrap ; go build -ldflags="-s -w" hk.go
+
+RUN cd /hitchkey/bootstrap ; cp hk /usr/bin
 
 USER example
+
+
 WORKDIR /home/example/

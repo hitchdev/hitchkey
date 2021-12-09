@@ -78,14 +78,14 @@ class Engine(BaseEngine):
     @no_stacktrace_for(ICommandError)
     @no_stacktrace_for(AssertionError)
     def run(self, cmd=None, will_output=None, timeout=240, exit_code=0):
-        process = self._build.cmd(*cmd.split(" ")).interact().screensize(160, 100).run()
+        process = self._build.cmd(cmd).interact().screensize(160, 100).run()
         process.wait_for_finish(timeout=timeout)
 
         actual_output = process.stripshot()
 
         if will_output is not None:
             try:
-                Templex(will_output).assert_match(actual_output)
+                assert will_output in actual_output
             except AssertionError:
                 if self._rewrite:
                     self.current_step.update(**{"will output": actual_output})
@@ -189,6 +189,15 @@ def deploy(version):
 
 def clean():
     print("destroy all created vms")
+
+
+def bash():
+    """Run bash in podman."""
+    from build import HitchKeyBuild
+    hkb = HitchKeyBuild(DIR)
+    hkb.ensure_built()
+    hkb.cmd("bash").run()
+    
 
 
 def buildhk():

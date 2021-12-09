@@ -26,17 +26,10 @@ Run hitchkey command:
         project file contents
   steps:
   - Run:
+      cmd: echo hello
+  - Run:
       cmd: |
         cd /hitchkey/example/hitch_subdirectory/projectdir
+        hk --folder
         hk cat file.txt
-      timeout: 120
-  - Run:
-      cmd: |
-        cd /hitchkey/example/hitch_subdirectory/hitch
-        hk cat ../projectdir/file.txt
-      will output: project file contents
-  - Run:
-      cmd: |
-        cd /hitchkey/example/hitch_subdirectory/
-        hk cat projectdir/file.txt
       will output: project file contents
